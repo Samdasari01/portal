@@ -337,7 +337,7 @@
                      </aside>
                      <!-- Message Window -->
                      <main class="w-2/3 flex flex-col">
-                         <div id="chat-window" class="flex-grow p-4 space-y-4 overflow-y-auto custom-scroll">
+                         <div id="chat-window" class="flex-grow p-4 flex flex-col overflow-y-auto custom-scroll">
                              <!-- JS will populate messages or show a placeholder -->
                          </div>
                          <div id="chat-input-area" class="p-4 border-t border-gray-700">
@@ -355,7 +355,10 @@
 
         <!-- Success Modal -->
         <div id="success-modal" class="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center z-50 hidden">
-            <div class="card p-8 rounded-xl shadow-2xl text-center max-w-sm mx-auto">
+            <div class="card p-8 rounded-xl shadow-2xl text-center max-w-sm mx-auto relative">
+                <button id="x-close-success-modal" class="absolute top-3 right-3 text-gray-400 hover:text-white transition-colors duration-200">
+                    <svg class="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                </button>
                 <div class="mx-auto bg-emerald-100 rounded-full h-16 w-16 flex items-center justify-center mb-4">
                      <svg class="h-10 w-10 text-emerald-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
                 </div>
@@ -416,6 +419,7 @@
             const successModal = document.getElementById('success-modal');
             const successMessage = document.getElementById('success-message');
             const closeSuccessModal = document.getElementById('close-success-modal');
+            const xCloseSuccessModal = document.getElementById('x-close-success-modal');
 
             // --- CHAT DOM REFERENCES ---
             const chatIconEmployee = document.getElementById('chat-icon-employee');
@@ -435,8 +439,8 @@
             let loggedInUser = null;
             let allEmployees = [];
             let ratingsChartInstance = null;
-            let messagesSubscription = null;
-            let activeChatPartner = null;
+            let portalSubscriptions = [];
+
 
             // --- SUPABASE CLIENT SETUP ---
             const SUPABASE_URL = 'https://hvjrgfpmfljuhqnzitqa.supabase.co';
@@ -451,6 +455,7 @@
             payslipForm.addEventListener('submit', handlePayslipUpload);
             notificationForm.addEventListener('submit', handleNotificationPost);
             closeSuccessModal.addEventListener('click', () => successModal.classList.add('hidden'));
+            xCloseSuccessModal.addEventListener('click', () => successModal.classList.add('hidden'));
             hrEmployeeSearch.addEventListener('input', (e) => populateEmployeeDropdown(allEmployees, e.target.value));
             aiInsightBtn.addEventListener('click', getPerformanceInsight);
             aiDraftBtn.addEventListener('click', draftNotification);
@@ -504,7 +509,7 @@
                         loginError.classList.remove('hidden');
                     } else {
                         loggedInUser = employee;
-                        await initChat();
+                        await setupRealtimeSubscriptions();
 
                         if (employee.role === 'hr') {
                             loginPage.classList.add('hidden');
@@ -513,7 +518,7 @@
                         } else {
                             loginPage.classList.add('hidden');
                             dashboardPage.style.display = 'flex';
-                            await loadDashboardData(employee);
+                            await loadDashboardData();
                         }
                     }
                 } catch (err) {
@@ -527,10 +532,9 @@
 
             function handleLogout() {
                 loggedInUser = null;
-                if (messagesSubscription) {
-                    messagesSubscription.unsubscribe();
-                    messagesSubscription = null;
-                }
+                // Unsubscribe from all realtime channels
+                portalSubscriptions.forEach(sub => sub.unsubscribe());
+                portalSubscriptions = [];
                 
                 dashboardPage.style.display = 'none';
                 hrPortalPage.style.display = 'none';
@@ -542,8 +546,18 @@
                 }
             }
             
-            async function loadDashboardData(employee) {
+            async function loadDashboardData() {
                 try {
+                    // Refetch the latest user data in case payslips were updated
+                    const { data: employee, error: userError } = await supabase
+                        .from('employees')
+                        .select('*')
+                        .eq('id', loggedInUser.id)
+                        .single();
+                    if (userError) throw userError;
+                    
+                    loggedInUser = employee; // Update global state with fresh data
+
                     welcomeName.textContent = employee.name.split(' ')[0];
                     employeeName.textContent = employee.name;
                     employeeDepartment.textContent = employee.department;
@@ -552,7 +566,7 @@
                     // Fetch ratings
                     const { data: ratings, error: ratingsError } = await supabase
                         .from('ratings')
-                        .select('month, rating')
+                        .select('id, month, rating')
                         .eq('employee_id', employee.id);
                     
                     if(ratingsError) throw ratingsError;
@@ -562,11 +576,13 @@
                         renderRatingsChart(ratings);
                         ratings.forEach(r => {
                              const li = document.createElement('li');
+                             li.id = `rating-${r.id}`;
                              li.className = 'flex justify-between items-center bg-gray-800 p-2 rounded';
                              li.innerHTML = `<span>${r.month}</span><span class="font-bold keyyards-green">${r.rating}/5</span>`;
                              monthlyRatingsList.appendChild(li);
                         });
                     } else {
+                        renderRatingsChart([]);
                         monthlyRatingsList.innerHTML = '<li class="text-gray-400">No rating data available yet.</li>';
                     }
 
@@ -581,8 +597,9 @@
                     }
                     
                     if (payslips.length > 0) {
-                        payslips.forEach(payslip => {
+                        payslips.forEach((payslip, index) => {
                             const li = document.createElement('li');
+                            li.id = `payslip-${index}`; // Unique ID for payslips
                             li.innerHTML = `<a href="${payslip.url}" target="_blank" download class="flex items-center justify-between p-2 rounded hover:bg-gray-800 transition-colors duration-200">
                                 <span>${payslip.month}</span>
                                 <svg class="h-5 w-5 keyyards-green" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
@@ -605,6 +622,7 @@
                     if (notifications) {
                         notifications.forEach(notif => {
                             const li = document.createElement('li');
+                            li.id = `notification-${notif.id}`;
                             li.className = 'p-2 border-b border-gray-700';
                             li.innerHTML = `<p>${notif.message}</p><p class="text-xs text-gray-500 mt-1">${new Date(notif.created_at).toLocaleString()}</p>`;
                             notificationsList.appendChild(li);
@@ -612,7 +630,6 @@
                     }
                 } catch (error) {
                     console.error("Error loading dashboard data:", error);
-                    // Optionally show an error to the user on the dashboard itself
                 }
             }
 
@@ -645,6 +662,62 @@
                     }
                 });
             }
+            
+             // --- REALTIME SUBSCRIPTIONS ---
+            async function setupRealtimeSubscriptions() {
+                // Clear any existing subscriptions
+                portalSubscriptions.forEach(sub => sub.unsubscribe());
+                portalSubscriptions = [];
+
+                const handleRealtimePayload = (payload) => {
+                    console.log('Realtime event received:', payload);
+                    if (payload.eventType === 'DELETE') {
+                        // Handle deletions for ratings and notifications
+                        if (payload.table === 'ratings' && payload.old.id) {
+                            const elem = document.getElementById(`rating-${payload.old.id}`);
+                            if (elem) elem.remove();
+                            // We still call loadDashboardData to update the chart
+                            loadDashboardData(); 
+                        }
+                        if (payload.table === 'notifications' && payload.old.id) {
+                            const elem = document.getElementById(`notification-${payload.old.id}`);
+                            if (elem) elem.remove();
+                        }
+                    } else {
+                        // For INSERT or UPDATE, simply reload all data to ensure consistency
+                        loadDashboardData();
+                    }
+                };
+                
+                // Messages Subscription (specific to user)
+                const messagesSub = supabase
+                    .channel(`public:messages:receiver_id=eq.${loggedInUser.id}`)
+                    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages', filter: `receiver_id=eq.${loggedInUser.id}` }, handleNewMessage)
+                    .subscribe();
+                portalSubscriptions.push(messagesSub);
+                
+                // Notifications Subscription (for everyone)
+                const notificationsSub = supabase
+                    .channel('public:notifications')
+                    .on('postgres_changes', { event: '*', schema: 'public', table: 'notifications' }, handleRealtimePayload)
+                    .subscribe();
+                portalSubscriptions.push(notificationsSub);
+
+                // Ratings Subscription (specific to user)
+                const ratingsSub = supabase
+                    .channel(`public:ratings:employee_id=eq.${loggedInUser.id}`)
+                    .on('postgres_changes', { event: '*', schema: 'public', table: 'ratings', filter: `employee_id=eq.${loggedInUser.id}` }, handleRealtimePayload)
+                    .subscribe();
+                portalSubscriptions.push(ratingsSub);
+                
+                // Employee (Payslips) Subscription (specific to user)
+                const employeeSub = supabase
+                    .channel(`public:employees:id=eq.${loggedInUser.id}`)
+                    .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'employees', filter: `id=eq.${loggedInUser.id}` }, handleRealtimePayload)
+                    .subscribe();
+                portalSubscriptions.push(employeeSub);
+            }
+
 
             async function getPerformanceInsight() {
                 aiInsightBtn.disabled = true;
@@ -723,18 +796,20 @@
                     const month = ratingMonth.value;
                     const rating = ratingValue.value;
 
-                    const { error } = await supabase.from('ratings').insert([{
+                    const { error } = await supabase.from('ratings').upsert({
                         employee_id: employeeId,
                         month: month,
                         rating: rating
-                    }]);
+                    }, {
+                        onConflict: 'employee_id, month'
+                    });
                     
                     if (error) throw error;
                     showSuccessModal(`Rating for ${hrEmployeeSelect.options[hrEmployeeSelect.selectedIndex].text} has been updated successfully.`);
                     ratingForm.reset();
                 } catch (error) {
                     console.error("Error updating rating:", error);
-                    showSuccessModal(`Failed to update rating.`, true);
+                    showSuccessModal(`Failed to update rating. Make sure the unique constraint on (employee_id, month) is set.`, true);
                 } finally {
                     hideLoader();
                 }
@@ -852,26 +927,6 @@
             }
 
             // --- CHAT FUNCTIONS ---
-            async function initChat() {
-                try {
-                    if (!loggedInUser) return;
-                    const { count, error } = await supabase
-                        .from('messages')
-                        .select('*', { count: 'exact', head: true })
-                        .eq('receiver_id', loggedInUser.id)
-                        .eq('is_read', false);
-                    if (error) throw error;
-                    if (count > 0) updateUnreadBadge(count);
-
-                    messagesSubscription = supabase
-                        .channel('public:messages')
-                        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, handleNewMessage)
-                        .subscribe();
-                } catch (error) {
-                    console.error("Error initializing chat:", error);
-                }
-            }
-
             function handleNewMessage(payload) {
                 const newMessage = payload.new;
                 if (newMessage.receiver_id === loggedInUser.id) {
@@ -977,26 +1032,17 @@
 
                     document.querySelectorAll('.chat-user').forEach(el => el.classList.remove('bg-gray-700'));
                     document.querySelector(`.chat-user[data-userid="${partner.id}"]`).classList.add('bg-gray-700');
-
-                    // Fetch messages sent by the logged-in user to the partner
-                    const { data: sentMessages, error: sentError } = await supabase
-                        .from('messages')
-                        .select('*')
-                        .eq('sender_id', loggedInUser.id)
-                        .eq('receiver_id', partner.id);
-                    if (sentError) throw sentError;
-
-                    // Fetch messages received by the logged-in user from the partner
-                    const { data: receivedMessages, error: receivedError } = await supabase
-                        .from('messages')
-                        .select('*')
-                        .eq('sender_id', partner.id)
-                        .eq('receiver_id', loggedInUser.id);
-                    if (receivedError) throw receivedError;
                     
-                    const allMessages = [...(sentMessages || []), ...(receivedMessages || [])];
-                    allMessages.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+                    const { data: allMessages, error } = await supabase
+                        .from('messages')
+                        .select('*')
+                        .or(`and(sender_id.eq.${loggedInUser.id},receiver_id.eq.${partner.id}),and(sender_id.eq.${partner.id},receiver_id.eq.${loggedInUser.id})`)
+                        .order('created_at', { ascending: true });
 
+                    if (error) {
+                        throw error;
+                    }
+                    
                     chatWindow.innerHTML = '';
                     if (allMessages && allMessages.length > 0) {
                         allMessages.forEach(msg => appendMessageToWindow(msg));
@@ -1017,11 +1063,12 @@
                 }
                 const isSender = message.sender_id === loggedInUser.id;
                 const messageDiv = document.createElement('div');
-                messageDiv.className = `flex mb-4 ${isSender ? 'justify-end' : 'justify-start'}`;
+                messageDiv.className = `flex w-full mb-2 ${isSender ? 'justify-end' : 'justify-start'}`;
+                
                 messageDiv.innerHTML = `
-                    <div class="max-w-xs md:max-w-md lg:max-w-lg p-3 rounded-xl ${isSender ? 'bg-emerald-600' : 'card'}">
-                        <p class="text-white">${message.content}</p>
-                        <p class="text-xs ${isSender ? 'text-emerald-200' : 'text-gray-500'} text-right mt-1">${new Date(message.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</p>
+                    <div class="max-w-xs md:max-w-md p-3 rounded-2xl ${isSender ? 'bg-emerald-600 text-white rounded-br-md' : 'bg-gray-700 text-gray-200 rounded-bl-md'}">
+                        <p class="text-white break-words">${message.content}</p>
+                        <p class="text-xs ${isSender ? 'text-emerald-200' : 'text-gray-400'} text-right mt-1 pt-1">${new Date(message.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</p>
                     </div>
                 `;
                 chatWindow.appendChild(messageDiv);
@@ -1050,7 +1097,6 @@
                     }
                 } catch(error) {
                     console.error('Error sending message:', error);
-                    // Maybe add a 'failed to send' indicator to the message bubble
                 }
             }
 
@@ -1083,5 +1129,4 @@
     </script>
 </body>
 </html>
-
 
