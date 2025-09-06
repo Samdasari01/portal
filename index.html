@@ -72,6 +72,71 @@
         #chat-panel {
             transition: transform 0.3s ease-in-out;
         }
+
+        /* Toast Notification Styles */
+        #toast-container {
+            position: fixed;
+            bottom: 1.5rem;
+            right: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            z-index: 100;
+        }
+
+        .toast {
+            display: flex;
+            align-items: center;
+            padding: 1rem;
+            border-radius: 0.75rem;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            opacity: 0;
+            transform: translateX(100%);
+            transition: all 0.3s ease-in-out;
+            min-width: 320px;
+            max-width: 400px;
+        }
+
+        .toast.show {
+            opacity: 1;
+            transform: translateX(0);
+        }
+        
+        .toast.hide {
+            opacity: 0;
+            transform: translateX(100%);
+        }
+
+        .toast-success {
+            background-color: #10B981; /* Darker green for success */
+            color: #ffffff;
+        }
+
+        .toast-error {
+            background-color: #EF4444; /* Red for error */
+            color: #ffffff;
+        }
+
+        /* Profile Picture Upload Overlay */
+        .profile-picture-container {
+            position: relative;
+            width: 128px;
+            height: 128px;
+        }
+        .profile-picture-overlay {
+            position: absolute;
+            inset: 0;
+            background-color: rgba(0,0,0,0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transition: opacity 0.2s ease-in-out;
+            cursor: pointer;
+        }
+        .profile-picture-container:hover .profile-picture-overlay {
+            opacity: 1;
+        }
     </style>
 </head>
 <body class="antialiased">
@@ -86,7 +151,7 @@
 
         <!-- Login Page -->
         <div id="login-page" class="min-h-screen flex flex-col items-center justify-center p-4">
-            <div class="w-full max-w-md mx-auto">
+             <div class="w-full max-w-md mx-auto">
                 <div class="card p-8 rounded-xl shadow-2xl">
                     <div class="flex justify-center mb-6">
                          <img src="https://image2url.com/images/1757072362158-40d68e44-3358-4dd7-a4ec-091971f5eae2.png" alt="Company Logo" class="h-32">
@@ -114,7 +179,7 @@
 
                 <footer class="text-center mt-8">
                     <p class="text-gray-500 text-sm">
-                        &copy; <span class="footer-year">2025</span> Keyyards.in. All Rights Reserved.
+                        &copy; <span id="footer-year-login">2025</span> Keyyards.in. All Rights Reserved.
                     </p>
                 </footer>
             </div>
@@ -134,11 +199,8 @@
                         <svg class="h-7 w-7" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" /></svg>
                         <span id="unread-count-employee" class="absolute -top-1 -right-1 bg-red-600 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center hidden">0</span>
                     </button>
-                    <button id="logout-btn" class="bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-300">
-                        Logout
-                    </button>
                 </div>
-            </header>
+             </header>
             
             <main class="p-4 sm:p-8 flex-grow">
                  <div class="max-w-7xl mx-auto">
@@ -147,12 +209,48 @@
                     </div>
 
                     <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                        <div class="lg:col-span-1 space-y-8">
+                            <div class="card p-6 rounded-xl shadow-lg">
+                                <h3 class="text-xl font-bold mb-4 text-center">Your Profile</h3>
+                                <div class="flex flex-col items-center">
+                                    <div class="profile-picture-container rounded-full mb-4 mx-auto">
+                                        <img id="profile-picture" src="https://image2url.com/images/1757151047041-a584d4ed-df8a-43fa-bfa3-8680ab3984f2.png" alt="Profile Picture" class="w-32 h-32 rounded-full object-cover border-4 border-gray-600">
+                                        <label for="profile-picture-upload" class="profile-picture-overlay rounded-full">
+                                            <svg class="h-8 w-8 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                                        </label>
+                                        <input type="file" id="profile-picture-upload" class="hidden" accept="image/png, image/jpeg">
+                                    </div>
+                                    <h4 id="employee-name-profile" class="text-2xl font-bold"></h4>
+                                    <p id="employee-designation-profile" class="text-gray-400"></p>
+                                </div>
+                                <div class="mt-6 pt-6 border-t border-gray-700 space-y-3 text-gray-300">
+                                     <p><strong>Department:</strong> <span id="employee-department-profile"></span></p>
+                                     <p><strong>Team:</strong> <span id="employee-team"></span></p>
+                                     <a href="mailto:hr@keyyards.in" class="flex items-center gap-2 text-gray-400 hover:text-keyyards-green transition-colors">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>
+                                        <span>hr@keyyards.in</span>
+                                    </a>
+                                </div>
+                                <button id="profile-logout-btn" class="mt-6 w-full bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-300">
+                                    Logout
+                                </button>
+                            </div>
+                            
+                            <div class="card p-6 rounded-xl shadow-lg">
+                                <h3 class="text-xl font-bold mb-4">Payslips</h3>
+                                <ul id="payslips-list" class="space-y-2"></ul>
+                            </div>
+                            
+                            <div class="card p-6 rounded-xl shadow-lg">
+                                <h3 class="text-xl font-bold mb-4">Notifications</h3>
+                                <ul id="notifications-list" class="space-y-3 h-48 overflow-y-auto custom-scroll"></ul>
+                            </div>
+                        </div>
+
                         <div class="lg:col-span-2 space-y-8">
-                            <!-- Performance Chart -->
                             <div class="card p-6 rounded-xl shadow-lg">
                                 <h3 class="text-xl font-bold mb-4">Monthly Performance Rating</h3>
                                 <canvas id="ratings-chart"></canvas>
-                                <!-- AI Insight Section -->
                                 <div class="mt-6 text-center">
                                     <button id="ai-insight-btn" class="keyyards-bg-green text-gray-900 font-semibold py-2 px-5 rounded-lg keyyards-bg-green-hover transition-colors duration-300 text-sm">
                                         ✨ Get AI Performance Insight
@@ -161,51 +259,9 @@
                                 </div>
                             </div>
                             
-                             <!-- Monthly Ratings List -->
                             <div class="card p-6 rounded-xl shadow-lg">
                                 <h3 class="text-xl font-bold mb-4">Rating Details</h3>
-                                <ul id="monthly-ratings-list" class="space-y-2">
-                                    <!-- JS will populate this -->
-                                </ul>
-                            </div>
-                        </div>
-
-                        <div class="lg:col-span-1 space-y-8">
-                            <!-- Employee Details Card -->
-                            <div class="card p-6 rounded-xl shadow-lg">
-                                <h3 class="text-xl font-bold mb-4 border-b border-gray-700 pb-2">Your Profile</h3>
-                                <div class="space-y-3 text-gray-300">
-                                    <p><strong>Name:</strong> <span id="employee-name"></span></p>
-                                    <p><strong>Department:</strong> <span id="employee-department"></span></p>
-                                    <p><strong>Designation:</strong> <span id="employee-designation"></span></p>
-                                    <div class="pt-3 mt-3 border-t border-gray-700">
-                                        <div class="flex items-center space-x-2">
-                                            <strong>Contact HR:</strong> 
-                                            <a href="mailto:hr@keyyards.in" class="keyyards-green hover:underline flex items-center gap-1.5 transition-colors duration-200">
-                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                                                </svg>
-                                                <span>hr@keyyards.in</span>
-                                            </a>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Payslips Card -->
-                            <div class="card p-6 rounded-xl shadow-lg">
-                                <h3 class="text-xl font-bold mb-4">Payslips</h3>
-                                <ul id="payslips-list" class="space-y-2">
-                                    <!-- JS will populate this -->
-                                </ul>
-                            </div>
-                            
-                             <!-- Notifications Card -->
-                            <div class="card p-6 rounded-xl shadow-lg">
-                                <h3 class="text-xl font-bold mb-4">Notifications</h3>
-                                <ul id="notifications-list" class="space-y-3 h-48 overflow-y-auto custom-scroll">
-                                    <!-- JS will populate this -->
-                                </ul>
+                                <ul id="monthly-ratings-list" class="space-y-2"></ul>
                             </div>
                         </div>
                     </div>
@@ -214,7 +270,7 @@
 
             <footer class="text-center py-8 mt-auto border-t border-gray-800">
                 <p class="text-gray-500 text-sm">
-                    &copy; <span class="footer-year">2025</span> Keyyards.in. All Rights Reserved. | Employee Portal
+                    &copy; <span id="footer-year-dashboard">2025</span> Keyyards.in. All Rights Reserved. | Employee Portal
                 </p>
             </footer>
         </div>
@@ -241,19 +297,17 @@
 
             <main class="p-4 sm:p-8 flex-grow">
                  <div class="max-w-4xl mx-auto space-y-8">
-                    <!-- Manage Ratings -->
+                    <!-- Manage Ratings Form -->
                     <div class="card p-6 rounded-xl shadow-lg">
                         <h3 class="text-xl font-bold mb-4">Manage Employee Ratings</h3>
                         <form id="rating-form">
-                            <div class="mb-4">
+                             <div class="mb-4">
                                 <label for="hr-employee-search" class="block mb-2 text-sm font-medium text-gray-300">Search Employee</label>
                                 <input type="text" id="hr-employee-search" class="input-field w-full p-3 rounded-lg" placeholder="Type to search...">
                             </div>
                             <div class="mb-4">
                                 <label for="hr-employee-select" class="block mb-2 text-sm font-medium text-gray-300">Select Employee</label>
-                                <select id="hr-employee-select" class="input-field w-full p-3 rounded-lg">
-                                    <!-- Options populated by JS -->
-                                </select>
+                                <select id="hr-employee-select" class="input-field w-full p-3 rounded-lg"></select>
                             </div>
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                                 <div>
@@ -268,16 +322,13 @@
                             <button type="submit" class="w-full keyyards-bg-green text-gray-900 font-bold p-3 rounded-lg keyyards-bg-green-hover transition-colors duration-300">Update Rating</button>
                         </form>
                     </div>
-
-                    <!-- Upload Payslip -->
+                    <!-- Upload Payslip Form -->
                     <div class="card p-6 rounded-xl shadow-lg">
                         <h3 class="text-xl font-bold mb-4">Upload Payslip</h3>
                         <form id="payslip-form">
-                            <div class="mb-4">
+                             <div class="mb-4">
                                 <label for="payslip-employee-select" class="block mb-2 text-sm font-medium text-gray-300">Select Employee</label>
-                                <select id="payslip-employee-select" class="input-field w-full p-3 rounded-lg">
-                                    <!-- Options populated by JS -->
-                                </select>
+                                <select id="payslip-employee-select" class="input-field w-full p-3 rounded-lg"></select>
                             </div>
                             <div class="mb-4">
                                 <label for="payslip-month" class="block mb-2 text-sm font-medium text-gray-300">Payslip Month</label>
@@ -290,12 +341,11 @@
                             <button type="submit" class="w-full keyyards-bg-green text-gray-900 font-bold p-3 rounded-lg keyyards-bg-green-hover transition-colors duration-300">Upload Payslip</button>
                         </form>
                     </div>
-
-                    <!-- Post Notification -->
+                    <!-- Post Notification Form -->
                     <div class="card p-6 rounded-xl shadow-lg">
                         <h3 class="text-xl font-bold mb-4">Post a Notification</h3>
                         <form id="notification-form">
-                            <div class="mb-4 relative">
+                             <div class="mb-4 relative">
                                 <label for="notification-message" class="block mb-2 text-sm font-medium text-gray-300">Message</label>
                                 <textarea id="notification-message" rows="4" required class="input-field w-full p-3 rounded-lg" placeholder="Enter notification for all employees..."></textarea>
                                  <div class="mt-2 flex items-center gap-2">
@@ -308,20 +358,19 @@
                             <button type="submit" class="w-full keyyards-bg-green text-gray-900 font-bold p-3 rounded-lg keyyards-bg-green-hover transition-colors duration-300">Post Notification</button>
                         </form>
                     </div>
-                    
-                    <div id="hr-status" class="mt-8 text-center p-4 rounded-lg hidden"></div>
-                </div>
+                 </div>
             </main>
 
             <footer class="text-center py-8 mt-auto border-t border-gray-800">
                 <p class="text-gray-500 text-sm">
-                    &copy; <span class="footer-year">2025</span> Keyyards.in. All Rights Reserved. | HR Portal
+                    &copy; <span id="footer-year-hr">2025</span> Keyyards.in. All Rights Reserved. | HR Portal
                 </p>
             </footer>
         </div>
 
-        <!-- CHAT PANEL -->
+        <!-- Chat Panel -->
         <div id="chat-panel-container" class="fixed inset-0 z-40 hidden">
+             <!-- All Chat Panel content -->
              <div id="chat-overlay" class="absolute inset-0 bg-black bg-opacity-60"></div>
              <div id="chat-panel" class="absolute top-0 right-0 h-full w-full max-w-2xl bg-gray-900 shadow-2xl flex flex-col transform translate-x-full">
                  <header class="flex items-center justify-between p-4 border-b border-gray-700">
@@ -353,30 +402,17 @@
              </div>
         </div>
 
-        <!-- Success Modal -->
-        <div id="success-modal" class="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center z-50 hidden">
-            <div class="card p-8 rounded-xl shadow-2xl text-center max-w-sm mx-auto relative">
-                <button id="x-close-success-modal" class="absolute top-3 right-3 text-gray-400 hover:text-white transition-colors duration-200">
-                    <svg class="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
-                </button>
-                <div class="mx-auto bg-emerald-100 rounded-full h-16 w-16 flex items-center justify-center mb-4">
-                     <svg class="h-10 w-10 text-emerald-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
-                </div>
-                <h3 class="text-2xl font-bold mb-2">Success!</h3>
-                <p id="success-message" class="text-gray-300 mb-6"></p>
-                <button id="close-success-modal" class="keyyards-bg-green text-gray-900 font-bold py-2 px-6 rounded-lg keyyards-bg-green-hover transition-colors duration-300">Close</button>
-            </div>
-        </div>
+        <!-- Toast Notification Container -->
+        <div id="toast-container"></div>
     </div>
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            // Set current year in all footers
-            document.querySelectorAll('.footer-year').forEach(el => {
-                el.textContent = new Date().getFullYear();
-            });
+            document.getElementById('footer-year-login').textContent = new Date().getFullYear();
+            document.getElementById('footer-year-dashboard').textContent = new Date().getFullYear();
+            document.getElementById('footer-year-hr').textContent = new Date().getFullYear();
 
-            // --- DOM ELEMENT REFERENCES ---
+            // --- ALL DOM ELEMENT REFERENCES ---
             const app = document.getElementById('app');
             const loader = document.getElementById('loader');
             const loginPage = document.getElementById('login-page');
@@ -384,22 +420,21 @@
             const hrPortalPage = document.getElementById('hr-portal-page');
             const loginForm = document.getElementById('login-form');
             const loginError = document.getElementById('login-error');
-            const logoutBtn = document.getElementById('logout-btn');
             const hrLogoutBtn = document.getElementById('hr-logout-btn');
-            
-            // Dashboard elements
             const welcomeName = document.getElementById('welcome-name');
-            const employeeName = document.getElementById('employee-name');
-            const employeeDepartment = document.getElementById('employee-department');
-            const employeeDesignation = document.getElementById('employee-designation');
-            const payslipsList = document.getElementById('payslips-list');
-            const notificationsList = document.getElementById('notifications-list');
             const ratingsChartCanvas = document.getElementById('ratings-chart');
             const monthlyRatingsList = document.getElementById('monthly-ratings-list');
             const aiInsightBtn = document.getElementById('ai-insight-btn');
             const aiInsightResult = document.getElementById('ai-insight-result');
-
-            // HR Portal elements
+            const profilePicture = document.getElementById('profile-picture');
+            const profilePictureUpload = document.getElementById('profile-picture-upload');
+            const employeeNameProfile = document.getElementById('employee-name-profile');
+            const employeeDesignationProfile = document.getElementById('employee-designation-profile');
+            const employeeDepartmentProfile = document.getElementById('employee-department-profile');
+            const employeeTeam = document.getElementById('employee-team');
+            const profileLogoutBtn = document.getElementById('profile-logout-btn');
+            const payslipsList = document.getElementById('payslips-list');
+            const notificationsList = document.getElementById('notifications-list');
             const hrEmployeeSearch = document.getElementById('hr-employee-search');
             const hrEmployeeSelect = document.getElementById('hr-employee-select');
             const ratingForm = document.getElementById('rating-form');
@@ -413,18 +448,10 @@
             const notificationMessage = document.getElementById('notification-message');
             const aiDraftPrompt = document.getElementById('ai-draft-prompt');
             const aiDraftBtn = document.getElementById('ai-draft-btn');
-            const hrStatus = document.getElementById('hr-status');
-
-            // Modal elements
-            const successModal = document.getElementById('success-modal');
-            const successMessage = document.getElementById('success-message');
-            const closeSuccessModal = document.getElementById('close-success-modal');
-            const xCloseSuccessModal = document.getElementById('x-close-success-modal');
-
-            // --- CHAT DOM REFERENCES ---
+            const toastContainer = document.getElementById('toast-container');
             const chatIconEmployee = document.getElementById('chat-icon-employee');
-            const chatIconHr = document.getElementById('chat-icon-hr');
             const unreadCountEmployee = document.getElementById('unread-count-employee');
+            const chatIconHr = document.getElementById('chat-icon-hr');
             const unreadCountHr = document.getElementById('unread-count-hr');
             const chatPanelContainer = document.getElementById('chat-panel-container');
             const chatPanel = document.getElementById('chat-panel');
@@ -434,13 +461,12 @@
             const chatWindow = document.getElementById('chat-window');
             const chatForm = document.getElementById('chat-form');
             const chatInput = document.getElementById('chat-input');
-
+            
             // --- GLOBAL STATE ---
             let loggedInUser = null;
             let allEmployees = [];
             let ratingsChartInstance = null;
             let portalSubscriptions = [];
-
 
             // --- SUPABASE CLIENT SETUP ---
             const SUPABASE_URL = 'https://hvjrgfpmfljuhqnzitqa.supabase.co';
@@ -449,28 +475,25 @@
 
             // --- EVENT LISTENERS ---
             loginForm.addEventListener('submit', handleLogin);
-            logoutBtn.addEventListener('click', handleLogout);
             hrLogoutBtn.addEventListener('click', handleLogout);
+            profileLogoutBtn.addEventListener('click', handleLogout);
+            profilePictureUpload.addEventListener('change', handleProfilePictureUpload);
             ratingForm.addEventListener('submit', handleRatingUpdate);
             payslipForm.addEventListener('submit', handlePayslipUpload);
             notificationForm.addEventListener('submit', handleNotificationPost);
-            closeSuccessModal.addEventListener('click', () => successModal.classList.add('hidden'));
-            xCloseSuccessModal.addEventListener('click', () => successModal.classList.add('hidden'));
             hrEmployeeSearch.addEventListener('input', (e) => populateEmployeeDropdown(allEmployees, e.target.value));
             aiInsightBtn.addEventListener('click', getPerformanceInsight);
             aiDraftBtn.addEventListener('click', draftNotification);
-            
-            // Chat listeners
             chatIconEmployee.addEventListener('click', openChatPanel);
             chatIconHr.addEventListener('click', openChatPanel);
             closeChatBtn.addEventListener('click', closeChatPanel);
             chatOverlay.addEventListener('click', closeChatPanel);
             chatForm.addEventListener('submit', handleSendMessage);
-
+            
             // --- CORE FUNCTIONS ---
             function showLoader() { loader.classList.remove('hidden'); }
             function hideLoader() { loader.classList.add('hidden'); }
-
+            
             async function handleLogin(event) {
                 event.preventDefault();
                 showLoader();
@@ -487,53 +510,45 @@
                         return;
                     }
 
-                    const { data: employee, error } = await supabase
-                        .from('employees')
-                        .select('*')
-                        .eq('employee_id', employeeId)
-                        .eq('password', password)
-                        .single();
+                    const { data, error } = await supabase
+                        .from('employees').select('*').eq('employee_id', employeeId).eq('password', password);
 
-                    if (error || !employee) {
-                        console.error('Login failed. Supabase error:', JSON.stringify(error, null, 2));
-                        if (error && error.message && error.message.toLowerCase().includes('failed to fetch')) {
-                             loginError.innerHTML = `
-                                <strong class="block">Connection Error.</strong>
-                                <span class="text-xs">This might be a network issue or an incorrect Supabase URL.</span>
-                            `;
-                        } else if (error && error.details && error.details.includes("multiple rows")) {
-                            loginError.textContent = 'System error: Duplicate employee records found.';
-                        } else {
-                            loginError.textContent = 'Invalid credentials. Please check your Employee ID and Password.';
-                        }
+                    if (error) throw error;
+
+                    if (!data || data.length === 0) {
+                        loginError.textContent = 'Invalid credentials. Please check your Employee ID and Password.';
                         loginError.classList.remove('hidden');
                     } else {
+                        const employee = data[0];
                         loggedInUser = employee;
-                        await setupRealtimeSubscriptions();
+                        
+                        showToast("Login successful!");
 
-                        if (employee.role === 'hr') {
-                            loginPage.classList.add('hidden');
-                            hrPortalPage.style.display = 'flex';
-                            await loadHrPortalData();
-                        } else {
-                            loginPage.classList.add('hidden');
-                            dashboardPage.style.display = 'flex';
-                            await loadDashboardData();
-                        }
+                        setTimeout(async () => {
+                            await setupRealtimeSubscriptions();
+                            if (employee.role === 'hr') {
+                                loginPage.classList.add('hidden');
+                                hrPortalPage.style.display = 'flex';
+                                await loadHrPortalData();
+                            } else {
+                                loginPage.classList.add('hidden');
+                                dashboardPage.style.display = 'flex';
+                                await loadDashboardData();
+                            }
+                        }, 500);
                     }
                 } catch (err) {
                     console.error("A critical error occurred during login:", err);
                     loginError.textContent = "An unexpected error occurred. Please try again.";
                     loginError.classList.remove('hidden');
                 } finally {
-                    hideLoader();
+                    setTimeout(hideLoader, 1000);
                 }
             }
 
             function handleLogout() {
                 loggedInUser = null;
-                // Unsubscribe from all realtime channels
-                portalSubscriptions.forEach(sub => sub.unsubscribe());
+                supabase.removeAllChannels();
                 portalSubscriptions = [];
                 
                 dashboardPage.style.display = 'none';
@@ -548,27 +563,20 @@
             
             async function loadDashboardData() {
                 try {
-                    // Refetch the latest user data in case payslips were updated
                     const { data: employee, error: userError } = await supabase
-                        .from('employees')
-                        .select('*')
-                        .eq('id', loggedInUser.id)
-                        .single();
+                        .from('employees').select(`*, teams (name)`).eq('id', loggedInUser.id).single();
                     if (userError) throw userError;
-                    
-                    loggedInUser = employee; // Update global state with fresh data
+                    loggedInUser = employee;
 
                     welcomeName.textContent = employee.name.split(' ')[0];
-                    employeeName.textContent = employee.name;
-                    employeeDepartment.textContent = employee.department;
-                    employeeDesignation.textContent = employee.designation;
+                    employeeNameProfile.textContent = employee.name;
+                    employeeDesignationProfile.textContent = employee.designation;
+                    employeeDepartmentProfile.textContent = employee.department;
+                    employeeTeam.textContent = employee.teams ? employee.teams.name : 'Not Assigned';
+                    profilePicture.src = employee.profile_picture_url || 'https://image2url.com/images/1757151047041-a584d4ed-df8a-43fa-bfa3-8680ab3984f2.png';
 
-                    // Fetch ratings
                     const { data: ratings, error: ratingsError } = await supabase
-                        .from('ratings')
-                        .select('id, month, rating')
-                        .eq('employee_id', employee.id);
-                    
+                        .from('ratings').select('id, month, rating').eq('employee_id', employee.id);
                     if(ratingsError) throw ratingsError;
 
                     monthlyRatingsList.innerHTML = '';
@@ -586,20 +594,17 @@
                         monthlyRatingsList.innerHTML = '<li class="text-gray-400">No rating data available yet.</li>';
                     }
 
-                    // Fetch and parse payslips safely
-                    payslipsList.innerHTML = '';
                     let payslips = employee.payslips;
                     if (typeof payslips === 'string') {
                         try { payslips = JSON.parse(payslips); } catch (e) { payslips = []; }
                     }
-                    if (!Array.isArray(payslips)) {
-                        payslips = [];
-                    }
+                    if (!Array.isArray(payslips)) payslips = [];
                     
+                    payslipsList.innerHTML = '';
                     if (payslips.length > 0) {
                         payslips.forEach((payslip, index) => {
                             const li = document.createElement('li');
-                            li.id = `payslip-${index}`; // Unique ID for payslips
+                            li.id = `payslip-${index}`;
                             li.innerHTML = `<a href="${payslip.url}" target="_blank" download class="flex items-center justify-between p-2 rounded hover:bg-gray-800 transition-colors duration-200">
                                 <span>${payslip.month}</span>
                                 <svg class="h-5 w-5 keyyards-green" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
@@ -610,12 +615,8 @@
                          payslipsList.innerHTML = '<li class="text-gray-400">No payslips found.</li>';
                     }
 
-                    // Fetch notifications
                     const { data: notifications, error: notificationsError } = await supabase
-                        .from('notifications')
-                        .select('*')
-                        .order('created_at', { ascending: false });
-
+                        .from('notifications').select('*').order('created_at', { ascending: false });
                     if (notificationsError) throw notificationsError;
                     
                     notificationsList.innerHTML = '';
@@ -634,9 +635,7 @@
             }
 
             function renderRatingsChart(ratings) {
-                if (ratingsChartInstance) {
-                    ratingsChartInstance.destroy();
-                }
+                if (ratingsChartInstance) ratingsChartInstance.destroy();
                 const ctx = ratingsChartCanvas.getContext('2d');
                 ratingsChartInstance = new Chart(ctx, {
                     type: 'line',
@@ -647,10 +646,8 @@
                             data: ratings.map(r => r.rating),
                             backgroundColor: 'rgba(52, 211, 153, 0.2)',
                             borderColor: 'rgba(52, 211, 153, 1)',
-                            borderWidth: 2,
-                            tension: 0.4,
-                            pointBackgroundColor: 'rgba(52, 211, 153, 1)',
-                            pointRadius: 5
+                            borderWidth: 2, tension: 0.4,
+                            pointBackgroundColor: 'rgba(52, 211, 153, 1)', pointRadius: 5
                         }]
                     },
                     options: {
@@ -663,95 +660,89 @@
                 });
             }
             
-             // --- REALTIME SUBSCRIPTIONS ---
             async function setupRealtimeSubscriptions() {
-                // Clear any existing subscriptions
-                portalSubscriptions.forEach(sub => sub.unsubscribe());
-                portalSubscriptions = [];
+                supabase.removeAllChannels();
 
                 const handleRealtimePayload = (payload) => {
                     console.log('Realtime event received:', payload);
-                    if (payload.eventType === 'DELETE') {
-                        // Handle deletions for ratings and notifications
-                        if (payload.table === 'ratings' && payload.old.id) {
-                            const elem = document.getElementById(`rating-${payload.old.id}`);
-                            if (elem) elem.remove();
-                            // We still call loadDashboardData to update the chart
-                            loadDashboardData(); 
+                    if (loggedInUser && payload.schema === 'public') {
+                        const affectsCurrentUser = 
+                            (payload.table === 'ratings' && ( (payload.old && payload.old.employee_id === loggedInUser.id) || (payload.new && payload.new.employee_id === loggedInUser.id))) ||
+                            (payload.table === 'employees' && ( (payload.old && payload.old.id === loggedInUser.id) || (payload.new && payload.new.id === loggedInUser.id)));
+
+                        if (affectsCurrentUser || payload.table === 'notifications') {
+                            console.log(`Refreshing dashboard due to a change in '${payload.table}'.`);
+                            loadDashboardData();
                         }
-                        if (payload.table === 'notifications' && payload.old.id) {
-                            const elem = document.getElementById(`notification-${payload.old.id}`);
-                            if (elem) elem.remove();
-                        }
-                    } else {
-                        // For INSERT or UPDATE, simply reload all data to ensure consistency
-                        loadDashboardData();
                     }
                 };
-                
-                // Messages Subscription (specific to user)
-                const messagesSub = supabase
-                    .channel(`public:messages:receiver_id=eq.${loggedInUser.id}`)
+
+                const allTablesSub = supabase.channel('public-changes')
+                    .on('postgres_changes', { event: '*', schema: 'public' }, handleRealtimePayload)
+                    .subscribe();
+
+                const messagesSub = supabase.channel('public-messages-insert')
                     .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages', filter: `receiver_id=eq.${loggedInUser.id}` }, handleNewMessage)
                     .subscribe();
-                portalSubscriptions.push(messagesSub);
-                
-                // Notifications Subscription (for everyone)
-                const notificationsSub = supabase
-                    .channel('public:notifications')
-                    .on('postgres_changes', { event: '*', schema: 'public', table: 'notifications' }, handleRealtimePayload)
-                    .subscribe();
-                portalSubscriptions.push(notificationsSub);
 
-                // Ratings Subscription (specific to user)
-                const ratingsSub = supabase
-                    .channel(`public:ratings:employee_id=eq.${loggedInUser.id}`)
-                    .on('postgres_changes', { event: '*', schema: 'public', table: 'ratings', filter: `employee_id=eq.${loggedInUser.id}` }, handleRealtimePayload)
-                    .subscribe();
-                portalSubscriptions.push(ratingsSub);
-                
-                // Employee (Payslips) Subscription (specific to user)
-                const employeeSub = supabase
-                    .channel(`public:employees:id=eq.${loggedInUser.id}`)
-                    .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'employees', filter: `id=eq.${loggedInUser.id}` }, handleRealtimePayload)
-                    .subscribe();
-                portalSubscriptions.push(employeeSub);
+                portalSubscriptions = [allTablesSub, messagesSub];
             }
+            
+            async function handleProfilePictureUpload(event) {
+                const file = event.target.files[0];
+                if (!file) return;
 
+                showLoader();
+                try {
+                    const filePath = `${loggedInUser.id}/${Date.now()}_${file.name}`;
+
+                    const { error: uploadError } = await supabase.storage
+                        .from('profile-pictures').upload(filePath, file, { upsert: false });
+
+                    if (uploadError) throw uploadError;
+
+                    const { data: urlData } = supabase.storage
+                        .from('profile-pictures').getPublicUrl(filePath);
+                    
+                    const { error: updateError } = await supabase
+                        .from('employees').update({ profile_picture_url: urlData.publicUrl }).eq('id', loggedInUser.id);
+                    
+                    if (updateError) throw updateError;
+                    
+                    profilePicture.src = urlData.publicUrl;
+                    showToast("Profile picture updated successfully!");
+
+                } catch (error) {
+                    console.error("Error uploading profile picture:", error);
+                    showToast("Failed to upload profile picture.", true);
+                } finally {
+                    hideLoader();
+                }
+            }
 
             async function getPerformanceInsight() {
                 aiInsightBtn.disabled = true;
                 aiInsightResult.classList.remove('hidden');
                 aiInsightResult.textContent = 'Generating feedback...';
                 try {
-                    const { data: ratings, error } = await supabase
-                        .from('ratings')
-                        .select('month, rating')
-                        .eq('employee_id', loggedInUser.id);
-                    
+                    const { data: ratings, error } = await supabase.from('ratings').select('month, rating').eq('employee_id', loggedInUser.id);
                     if (error) throw error;
                     if (!ratings || ratings.length === 0) {
                          aiInsightResult.textContent = 'Not enough data for an insight.';
                          return;
                     }
-
                     const ratingsText = ratings.map(r => `${r.month}: ${r.rating}/5`).join(', ');
                     const prompt = `Based on these monthly performance ratings (${ratingsText}), write a short, encouraging, and constructive performance summary for the employee. Keep it positive and motivational.`;
-
                     const apiKey = "";
                     const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
-                    
                     const response = await fetch(apiUrl, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
                     });
-
                     if (!response.ok) throw new Error(`API call failed with status ${response.status}`);
-                    
                     const result = await response.json();
-                    const insight = result.candidates[0].content.parts[0].text;
-                    aiInsightResult.textContent = insight;
+                    aiInsightResult.textContent = result.candidates[0].content.parts[0].text;
                 } catch (error) {
                     console.error("Gemini API error:", error);
                     aiInsightResult.textContent = 'Could not generate insight at this time.';
@@ -765,27 +756,20 @@
                 try {
                     const { data, error } = await supabase.from('employees').select('*');
                     if (error) throw error;
-                    if (data) {
-                        allEmployees = data;
-                        populateEmployeeDropdown(allEmployees);
-                    }
+                    allEmployees = data || [];
+                    populateEmployeeDropdown(allEmployees);
                 } catch(error) {
                     console.error("Error loading HR portal data:", error);
-                    showSuccessModal("Could not load employee data.", true);
+                    showToast("Could not load employee data.", true);
                 } finally {
                     hideLoader();
                 }
             }
 
             function populateEmployeeDropdown(employees, filter = '') {
-                const filteredEmployees = employees.filter(emp => emp.name.toLowerCase().includes(filter.toLowerCase()));
-                hrEmployeeSelect.innerHTML = '';
-                payslipEmployeeSelect.innerHTML = '';
-                filteredEmployees.forEach(emp => {
-                    const option = `<option value="${emp.id}">${emp.name} (${emp.employee_id})</option>`;
-                    hrEmployeeSelect.innerHTML += option;
-                    payslipEmployeeSelect.innerHTML += option;
-                });
+                const filtered = employees.filter(emp => emp.name.toLowerCase().includes(filter.toLowerCase()));
+                hrEmployeeSelect.innerHTML = filtered.map(emp => `<option value="${emp.id}">${emp.name} (${emp.employee_id})</option>`).join('');
+                payslipEmployeeSelect.innerHTML = hrEmployeeSelect.innerHTML;
             }
             
             async function handleRatingUpdate(e) {
@@ -793,8 +777,13 @@
                 showLoader();
                 try {
                     const employeeId = hrEmployeeSelect.value;
-                    const month = ratingMonth.value;
+                    const month = ratingMonth.value.trim();
                     const rating = ratingValue.value;
+
+                    if (!month || !rating) {
+                        showToast("Month and Rating cannot be empty.", true);
+                        return;
+                    }
 
                     const { error } = await supabase.from('ratings').upsert({
                         employee_id: employeeId,
@@ -805,11 +794,16 @@
                     });
                     
                     if (error) throw error;
-                    showSuccessModal(`Rating for ${hrEmployeeSelect.options[hrEmployeeSelect.selectedIndex].text} has been updated successfully.`);
+                    
+                    showToast("Rating updated successfully.");
                     ratingForm.reset();
                 } catch (error) {
-                    console.error("Error updating rating:", error);
-                    showSuccessModal(`Failed to update rating. Make sure the unique constraint on (employee_id, month) is set.`, true);
+                    console.error("Error handling rating update:", error);
+                     if (error.message.includes('constraint')) {
+                         showToast(`Database error. Please ensure a unique constraint is set on the 'ratings' table for 'employee_id' and 'month'.`, true);
+                    } else {
+                        showToast(`Failed to process rating update.`, true);
+                    }
                 } finally {
                     hideLoader();
                 }
@@ -822,42 +816,29 @@
                     const employeeId = payslipEmployeeSelect.value;
                     const month = payslipMonth.value;
                     const file = payslipFile.files[0];
-
                     if (!file) {
-                        showSuccessModal('Please select a file to upload.', true);
+                        showToast('Please select a file to upload.', true);
                         return;
                     }
-
                     const filePath = `${employeeId}/${month.replace(/\s+/g, '-')}-${Date.now()}.pdf`;
                     const { error: uploadError } = await supabase.storage.from('payslips').upload(filePath, file);
                     if (uploadError) throw uploadError;
-
                     const { data: urlData } = supabase.storage.from('payslips').getPublicUrl(filePath);
-                    const publicUrl = urlData.publicUrl;
-
-                    const { data: currentEmployee, error: fetchError } = await supabase
-                        .from('employees').select('payslips').eq('id', employeeId).single();
+                    const { data: current, error: fetchError } = await supabase.from('employees').select('payslips').eq('id', employeeId).single();
                     if (fetchError) throw fetchError;
-                    
-                    let existingPayslips = currentEmployee.payslips;
+                    let existingPayslips = current.payslips;
                     if (typeof existingPayslips === 'string') {
                         try { existingPayslips = JSON.parse(existingPayslips); } catch (e) { existingPayslips = []; }
                     }
-                    if (!Array.isArray(existingPayslips)) {
-                        existingPayslips = [];
-                    }
-
-                    const newPayslips = [...existingPayslips, { month, url: publicUrl }];
-                    const { error: updateError } = await supabase
-                        .from('employees').update({ payslips: newPayslips }).eq('id', employeeId);
+                    if (!Array.isArray(existingPayslips)) existingPayslips = [];
+                    const newPayslips = [...existingPayslips, { month, url: urlData.publicUrl }];
+                    const { error: updateError } = await supabase.from('employees').update({ payslips: newPayslips }).eq('id', employeeId);
                     if (updateError) throw updateError;
-                    
-                    showSuccessModal(`Payslip for ${payslipEmployeeSelect.options[payslipEmployeeSelect.selectedIndex].text} uploaded successfully.`);
+                    showToast("PDF uploaded successfully.");
                     payslipForm.reset();
-
                 } catch (error) {
                     console.error("Error during payslip upload:", error);
-                    showSuccessModal('An error occurred during the upload process.', true);
+                    showToast('An error occurred during the upload process.', true);
                 } finally {
                     hideLoader();
                 }
@@ -870,11 +851,11 @@
                     const message = notificationMessage.value;
                     const { error } = await supabase.from('notifications').insert([{ message: message }]);
                     if (error) throw error;
-                    showSuccessModal('Notification posted successfully.');
+                    showToast('Notification posted successfully.');
                     notificationForm.reset();
                 } catch(error) {
                     console.error("Error posting notification:", error);
-                    showSuccessModal('Failed to post notification.', true);
+                    showToast('Failed to post notification.', true);
                 } finally {
                     hideLoader();
                 }
@@ -883,10 +864,8 @@
             async function draftNotification() {
                 const promptText = aiDraftPrompt.value;
                 if (!promptText) return;
-
                 aiDraftBtn.disabled = true;
                 notificationMessage.value = 'Drafting with AI...';
-
                 try {
                     const prompt = `Write a professional but friendly company announcement for an employee portal based on these keywords: "${promptText}".`;
                     const apiKey = "";
@@ -898,8 +877,7 @@
                     });
                     if (!response.ok) throw new Error(`API call failed with status ${response.status}`);
                     const result = await response.json();
-                    const draft = result.candidates[0].content.parts[0].text;
-                    notificationMessage.value = draft;
+                    notificationMessage.value = result.candidates[0].content.parts[0].text;
                 } catch(error) {
                     console.error("Gemini API error:", error);
                     notificationMessage.value = 'Could not draft notification at this time.';
@@ -908,28 +886,38 @@
                 }
             }
 
-            function showSuccessModal(message, isError = false) {
-                successMessage.textContent = message;
-                const iconContainer = successModal.querySelector('div > div:first-child');
-                const title = successModal.querySelector('h3');
-                if (isError) {
-                    title.textContent = 'Error!';
-                    iconContainer.classList.remove('bg-emerald-100');
-                    iconContainer.classList.add('bg-red-100');
-                    iconContainer.innerHTML = `<svg class="h-10 w-10 text-red-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>`;
-                } else {
-                    title.textContent = 'Success!';
-                    iconContainer.classList.remove('bg-red-100');
-                    iconContainer.classList.add('bg-emerald-100');
-                    iconContainer.innerHTML = `<svg class="h-10 w-10 text-emerald-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>`;
-                }
-                successModal.classList.remove('hidden');
-            }
+            function showToast(message, isError = false) {
+                const toast = document.createElement('div');
+                const toastId = `toast-${Date.now()}`;
+                toast.id = toastId;
+                toast.className = `toast ${isError ? 'toast-error' : 'toast-success'}`;
 
-            // --- CHAT FUNCTIONS ---
-            function handleNewMessage(payload) {
+                const icon = isError ? 
+                    `<svg class="h-6 w-6 mr-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>` :
+                    `<svg class="h-6 w-6 mr-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>`;
+
+                toast.innerHTML = `
+                    ${icon}
+                    <span class="flex-grow">${message}</span>
+                    <button class="ml-4 text-white hover:text-gray-200" onclick="document.getElementById('${toastId}').remove()">
+                        <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                    </button>
+                `;
+
+                toastContainer.appendChild(toast);
+
+                setTimeout(() => toast.classList.add('show'), 100);
+
+                setTimeout(() => {
+                    toast.classList.remove('show');
+                    toast.classList.add('hide');
+                    toast.addEventListener('transitionend', () => toast.remove());
+                }, 3000);
+            }
+            
+            async function handleNewMessage(payload) {
                 const newMessage = payload.new;
-                if (newMessage.receiver_id === loggedInUser.id) {
+                if (loggedInUser && newMessage.receiver_id === loggedInUser.id) {
                     if (!chatPanelContainer.classList.contains('hidden') && activeChatPartner && activeChatPartner.id === newMessage.sender_id) {
                         appendMessageToWindow(newMessage);
                         markConversationAsRead(newMessage.sender_id);
@@ -937,7 +925,6 @@
                         const unreadBadge = loggedInUser.role === 'hr' ? unreadCountHr : unreadCountEmployee;
                         const currentCount = parseInt(unreadBadge.textContent) || 0;
                         updateUnreadBadge(currentCount + 1);
-                        
                         const userListItem = document.querySelector(`.chat-user[data-userid="${newMessage.sender_id}"] .unread-bubble`);
                         if (userListItem) {
                             userListItem.classList.remove('hidden');
@@ -986,11 +973,11 @@
                 if (loggedInUser.role === 'hr') {
                     const { data, error } = await supabase.from('employees').select('*').neq('id', loggedInUser.id);
                     if (error) throw error;
-                    if (data) chatContacts = data;
+                    chatContacts = data || [];
                 } else {
                     const { data, error } = await supabase.from('employees').select('*').eq('role', 'hr');
                     if (error) throw error;
-                    if (data) chatContacts = data;
+                    chatContacts = data || [];
                 }
                 
                 const { data: unreadMessages, error: msgError } = await supabase
@@ -1039,9 +1026,7 @@
                         .or(`and(sender_id.eq.${loggedInUser.id},receiver_id.eq.${partner.id}),and(sender_id.eq.${partner.id},receiver_id.eq.${loggedInUser.id})`)
                         .order('created_at', { ascending: true });
 
-                    if (error) {
-                        throw error;
-                    }
+                    if (error) throw error;
                     
                     chatWindow.innerHTML = '';
                     if (allMessages && allMessages.length > 0) {
@@ -1068,7 +1053,6 @@
                 messageDiv.innerHTML = `
                     <div class="max-w-xs md:max-w-md p-3 rounded-2xl ${isSender ? 'bg-emerald-600 text-white rounded-br-md' : 'bg-gray-700 text-gray-200 rounded-bl-md'}">
                         <p class="text-white break-words">${message.content}</p>
-                        <p class="text-xs ${isSender ? 'text-emerald-200' : 'text-gray-400'} text-right mt-1 pt-1">${new Date(message.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</p>
                     </div>
                 `;
                 chatWindow.appendChild(messageDiv);
@@ -1083,20 +1067,22 @@
                     if (content === '') return;
                     const tempMessage = chatInput.value;
                     chatInput.value = '';
-
-                    const message = {
-                        sender_id: loggedInUser.id, receiver_id: activeChatPartner.id, content: content, is_read: false
+                    const message = { 
+                        sender_id: loggedInUser.id, 
+                        receiver_id: activeChatPartner.id, 
+                        content: content, 
+                        is_read: false,
+                        created_at: new Date().toISOString()
                     };
-                    
-                    appendMessageToWindow({...message, created_at: new Date().toISOString()});
-                    
+                    appendMessageToWindow(message);
                     const { error } = await supabase.from('messages').insert(message);
                     if (error) {
-                       chatInput.value = tempMessage; // Restore on failure
+                       chatInput.value = tempMessage;
                        throw error;
                     }
                 } catch(error) {
                     console.error('Error sending message:', error);
+                    showToast("Failed to send message.", true);
                 }
             }
 
