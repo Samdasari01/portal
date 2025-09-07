@@ -1,675 +1,1115 @@
 <!DOCTYPE html>
-<html lang="en" class="dark">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Employee Portal - Keyyards</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        :root {
-            --bg-light: #f7fafc;
-            --text-light: #4a5568;
-            --border-light: #e2e8f0;
-            --card-bg-light: #ffffff;
+    <title>Employee Portal</title>
 
-            --bg-dark: #1a202c;
-            --text-dark: #a0aec0;
-            --border-dark: #4a5568;
-            --card-bg-dark: #2d3748;
-        }
-        html.dark {
-            color-scheme: dark;
-        }
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Supabase JS Client -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <!-- Chart.js for Ratings Visualization -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <style>
+        /* Custom styles to match keyyards.in aesthetic */
         body {
             font-family: 'Inter', sans-serif;
-            background-color: var(--bg-light);
-            color: var(--text-light);
-        }
-        .dark body {
-            background-color: var(--bg-dark);
-            color: var(--text-dark);
+            background-color: #111827; /* Dark gray background */
+            color: #E5E7EB; /* Light gray text */
         }
 
-        .sidebar-link.active {
-            background-color: #ebf8ff;
-            color: #2b6cb0;
-            font-weight: 600;
+        .keyyards-green {
+            color: #34D399; /* Emerald-500, a vibrant green */
         }
-        .dark .sidebar-link.active {
-            background-color: #2b6cb0;
+        
+        .keyyards-bg-green {
+            background-color: #34D399;
+        }
+
+        .keyyards-bg-green-hover:hover {
+            background-color: #10B981; /* A slightly darker green for hover */
+        }
+        
+        .card {
+            background-color: #1F2937; /* A slightly lighter dark gray for cards */
+            border: 1px solid #374151; /* Subtle border */
+        }
+        
+        .input-field {
+            background-color: #374151;
+            border: 1px solid #4B5563;
+        }
+        
+        .input-field:focus {
+            outline: none;
+            box-shadow: 0 0 0 2px #34D399;
+            border-color: #34D399;
+        }
+
+        /* Custom scrollbar styles */
+        .custom-scroll::-webkit-scrollbar {
+            width: 8px;
+        }
+        .custom-scroll::-webkit-scrollbar-track {
+            background: #1F2937;
+        }
+        .custom-scroll::-webkit-scrollbar-thumb {
+            background-color: #4B5563;
+            border-radius: 10px;
+            border: 2px solid #1F2937;
+        }
+
+        /* Chat panel transition */
+        #chat-panel {
+            transition: transform 0.3s ease-in-out;
+        }
+
+        /* Toast Notification Styles */
+        #toast-container {
+            position: fixed;
+            bottom: 1.5rem;
+            right: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            z-index: 100;
+        }
+
+        .toast {
+            display: flex;
+            align-items: center;
+            padding: 1rem;
+            border-radius: 0.75rem;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            opacity: 0;
+            transform: translateX(100%);
+            transition: all 0.3s ease-in-out;
+            min-width: 320px;
+            max-width: 400px;
+        }
+
+        .toast.show {
+            opacity: 1;
+            transform: translateX(0);
+        }
+        
+        .toast.hide {
+            opacity: 0;
+            transform: translateX(100%);
+        }
+
+        .toast-success {
+            background-color: #10B981; /* Darker green for success */
             color: #ffffff;
         }
 
-        .sidebar-link:not(.active):hover {
-            background-color: #edf2f7;
-        }
-        .dark .sidebar-link:not(.active):hover {
-            background-color: #4a5568;
+        .toast-error {
+            background-color: #EF4444; /* Red for error */
+            color: #ffffff;
         }
 
-        .btn-primary {
-            background-color: #2b6cb0;
-            color: white;
-            transition: background-color 0.3s ease;
+        /* Profile Picture Upload Overlay */
+        .profile-picture-container {
+            position: relative;
+            width: 128px;
+            height: 128px;
         }
-        .btn-primary:hover {
-            background-color: #2c5282;
+        .profile-picture-overlay {
+            position: absolute;
+            inset: 0;
+            background-color: rgba(0,0,0,0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transition: opacity 0.2s ease-in-out;
+            cursor: pointer;
         }
-        .btn-primary:disabled {
-            background-color: #a0aec0;
-            cursor: not-allowed;
+        .profile-picture-container:hover .profile-picture-overlay {
+            opacity: 1;
         }
-
-        .btn-danger {
-            background-color: #e53e3e;
-            color: white;
-            transition: background-color 0.3s ease;
-        }
-        .btn-danger:hover {
-            background-color: #c53030;
-        }
-
-        /* Table Styles */
-        .task-table {
-            border-collapse: collapse;
-            width: 100%;
-        }
-        .task-table th, .task-table td {
-            padding: 16px;
-            text-align: left;
-            border-bottom: 1px solid var(--border-light);
-        }
-        .dark .task-table th, .dark .task-table td {
-            border-bottom-color: var(--border-dark);
-        }
-        .task-table th {
-            font-weight: 600;
-            font-size: 0.75rem;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-            color: #718096;
-        }
-        .dark .task-table th {
-            color: #a0aec0;
-        }
-        .status-badge {
-            padding: 4px 12px;
-            border-radius: 9999px;
-            font-weight: 600;
-            font-size: 0.75rem;
-            text-transform: uppercase;
-        }
-
-        .status-badge-completed { background-color: #38a169; color: #ffffff; }
-        .status-badge-in-progress { background-color: #3182ce; color: #ffffff; }
-        .status-badge-to-do { background-color: #dd6b20; color: #ffffff; }
-        .status-badge-blocked { background-color: #e53e3e; color: #ffffff; }
     </style>
 </head>
-<body>
+<body class="antialiased">
 
-    <!-- Toast Notification Container -->
-    <div id="toastContainer" class="fixed top-5 right-5 z-50 space-y-3 w-72"></div>
+    <!-- Main App Container -->
+    <div id="app">
 
-    <!-- Login Screen -->
-    <div id="loginScreen" class="min-h-screen flex items-center justify-center bg-gray-200 dark:bg-gray-900">
-        <div class="w-full max-w-md p-8 space-y-6 bg-white dark:bg-gray-800 rounded-xl shadow-lg">
-            <div class="text-center">
-                 <img src="https://image2url.com/images/1757268127491-4d7772ef-00dc-44ee-9d6c-b145a09092e6.png" alt="Keyyards Logo" class="w-24 h-24 mx-auto mb-4 rounded-full">
-                <h1 class="text-3xl font-bold text-gray-800 dark:text-white">Task Manager</h1>
-                <p class="mt-2 text-gray-500 dark:text-gray-400">Sign in to the Keyyards workspace</p>
-            </div>
-            <form id="loginForm" class="mt-8 space-y-6">
-                 <div class="space-y-4">
-                    <div>
-                        <label for="teamId" class="text-sm font-medium text-gray-700 dark:text-gray-300">Team ID</label>
-                        <input id="teamId" name="teamId" type="text" required class="mt-1 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-3" placeholder="Enter your team ID">
-                    </div>
-                    <div>
-                         <label for="username" class="text-sm font-medium text-gray-700 dark:text-gray-300">Username</label>
-                        <input id="username" name="username" type="text" required class="mt-1 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-3" placeholder="Enter your username">
-                    </div>
-                    <div>
-                         <label for="password" class="text-sm font-medium text-gray-700 dark:text-gray-300">Password</label>
-                        <input id="password" name="password" type="password" required class="mt-1 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-3" placeholder="••••••••">
-                    </div>
-                </div>
-                <button type="submit" class="w-full flex justify-center py-3 px-4 text-sm font-medium rounded-lg btn-primary">
-                    Sign in
-                </button>
-                <p id="loginMessage" class="text-center text-sm text-red-500 h-4"></p>
-            </form>
+        <!-- Loading Spinner -->
+        <div id="loader" class="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center z-50 hidden">
+            <div class="w-16 h-16 border-4 border-dashed rounded-full animate-spin border-emerald-400"></div>
         </div>
-    </div>
 
-    <!-- Dashboard Container -->
-    <div id="dashboardContainer" class="hidden">
-        <div class="flex h-screen bg-gray-100 dark:bg-gray-900">
-            <!-- Sidebar -->
-            <div class="hidden md:flex flex-col w-64 bg-white dark:bg-gray-800 border-r dark:border-gray-700">
-                <div class="flex items-center justify-center h-16 border-b dark:border-gray-700">
-                    <div class="flex items-center space-x-2">
-                        <img src="https://image2url.com/images/1757268127491-4d7772ef-00dc-44ee-9d6c-b145a09092e6.png" alt="Keyyards Logo" class="w-10 h-10 rounded-md">
-                        <h1 class="text-xl font-bold text-gray-800 dark:text-white">Keyyards</h1>
+        <!-- Login Page -->
+        <div id="login-page" class="min-h-screen flex flex-col items-center justify-center p-4">
+             <div class="w-full max-w-md mx-auto">
+                <div class="card p-8 rounded-xl shadow-2xl">
+                    <div class="flex justify-center mb-6">
+                         <img src="https://image2url.com/images/1757072362158-40d68e44-3358-4dd7-a4ec-091971f5eae2.png" alt="Company Logo" class="h-32">
                     </div>
-                </div>
-                <div class="flex flex-col flex-grow p-2">
-                    <nav class="flex flex-col flex-grow space-y-1" id="sidebarNav">
-                        <a href="#" id="allItemsBtn" class="sidebar-link flex items-center px-4 py-2 rounded-md text-gray-700 dark:text-gray-300">
-                            <i class="fas fa-th-large mr-3 w-5 text-center"></i> All Items
-                        </a>
-                        <a href="#" id="myItemsBtn" class="sidebar-link flex items-center px-4 py-2 rounded-md text-gray-700 dark:text-gray-300">
-                            <i class="fas fa-user-check mr-3 w-5 text-center"></i> My Items
-                        </a>
-                        <p class="px-4 pt-4 pb-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">Actions</p>
-                        <a href="#" id="myTasksBtn" class="sidebar-link flex items-center px-4 py-2 rounded-md text-gray-700 dark:text-gray-300">
-                             <i class="fas fa-tasks mr-3 w-5 text-center"></i> My Tasks
-                        </a>
-                        <a href="#" id="reportIssueBtn" class="flex items-center px-4 py-2 rounded-md text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
-                             <i class="fas fa-bug mr-3 w-5 text-center"></i> Report an Issue
-                        </a>
-                    </nav>
-                </div>
-            </div>
-
-            <!-- Main content -->
-            <div class="flex flex-col flex-grow">
-                <header class="flex items-center justify-between h-16 px-6 bg-white dark:bg-gray-800 border-b dark:border-gray-700">
-                     <div id="createNewTaskBtnContainer" class="flex items-center">
-                        <button id="createNewTaskBtn" class="px-4 py-2 font-semibold rounded-md btn-primary">
-                            <i class="fas fa-plus mr-2"></i> Create New
-                        </button>
-                    </div>
-                    <div class="flex items-center">
-                        <button id="themeToggle" class="p-2 rounded-full text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 mr-4">
-                            <i class="fas fa-sun text-yellow-400 hidden"></i>
-                            <i class="fas fa-moon text-gray-300"></i>
-                        </button>
-                        <div class="relative">
-                            <button class="flex items-center space-x-2">
-                                <span class="font-semibold text-gray-700 dark:text-gray-200" id="userNameDisplay"></span>
-                                <i class="fas fa-user-circle text-2xl text-gray-600 dark:text-gray-400"></i>
-                            </button>
+                    <h1 class="text-3xl font-bold text-center mb-2">
+                        Employee <span class="keyyards-green">Portal</span>
+                    </h1>
+                    <p class="text-center text-gray-400 mb-8">Sign in to access your dashboard.</p>
+                    
+                    <form id="login-form">
+                        <div class="mb-4">
+                            <label for="employee_id" class="block mb-2 text-sm font-medium text-gray-300">Employee ID</label>
+                            <input type="text" id="employee_id" name="employee_id" required class="input-field w-full p-3 rounded-lg text-gray-200 focus:ring-2 focus:ring-emerald-400" placeholder="e.g., KYD1024">
                         </div>
-                         <button id="logoutBtn" class="ml-4 font-bold py-2 px-4 rounded-lg btn-danger">Logout</button>
-                    </div>
-                </header>
+                        <div class="mb-6">
+                            <label for="password" class="block mb-2 text-sm font-medium text-gray-300">Password</label>
+                            <input type="password" id="password" name="password" required class="input-field w-full p-3 rounded-lg text-gray-200 focus:ring-2 focus:ring-emerald-400" placeholder="••••••••">
+                        </div>
+                        <button type="submit" class="w-full keyyards-bg-green text-gray-900 font-bold p-3 rounded-lg keyyards-bg-green-hover transition-colors duration-300">
+                            Sign In
+                        </button>
+                    </form>
+                    <p id="login-error" class="text-red-500 mt-4 text-center text-sm hidden"></p>
+                </div>
 
-                <main class="flex-grow p-6 overflow-auto">
-                    <div class="w-full bg-white dark:bg-gray-800 rounded-lg shadow-md">
-                        <div class="px-6 py-4 border-b dark:border-gray-700">
-                             <div class="flex items-center justify-between">
-                                <h2 class="text-xl font-semibold text-gray-800 dark:text-white">Tasks</h2>
-                                <div class="relative">
-                                    <input type="text" class="w-64 pl-10 pr-4 py-2 border rounded-lg bg-gray-50 dark:bg-gray-700 dark:border-gray-600" placeholder="Search tasks...">
-                                    <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                <footer class="text-center mt-8">
+                    <p class="text-gray-500 text-sm">
+                        &copy; <span id="footer-year-login">2025</span> Keyyards.in. All Rights Reserved.
+                    </p>
+                </footer>
+            </div>
+        </div>
+
+        <!-- Dashboard Page -->
+        <div id="dashboard-page" class="hidden flex-col min-h-screen">
+             <header class="card p-4 sm:p-6 flex justify-between items-center rounded-none shadow-lg z-10">
+                <div class="flex items-center space-x-4">
+                    <img src="https://image2url.com/images/1757072362158-40d68e44-3358-4dd7-a4ec-091971f5eae2.png" alt="Company Logo" class="h-16">
+                    <h1 class="text-2xl font-bold">
+                        Employee <span class="keyyards-green">Dashboard</span>
+                    </h1>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <button id="chat-icon-employee" class="relative text-gray-400 hover:text-white transition-colors duration-200">
+                        <svg class="h-7 w-7" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" /></svg>
+                        <span id="unread-count-employee" class="absolute -top-1 -right-1 bg-red-600 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center hidden">0</span>
+                    </button>
+                </div>
+             </header>
+            
+            <main class="p-4 sm:p-8 flex-grow">
+                 <div class="max-w-7xl mx-auto">
+                    <div class="card p-6 rounded-xl shadow-lg mb-8">
+                        <h2 class="text-2xl font-bold">Welcome back, <span id="welcome-name" class="keyyards-green"></span>!</h2>
+                    </div>
+
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                        <div class="lg:col-span-1 space-y-8">
+                            <div class="card p-6 rounded-xl shadow-lg">
+                                <h3 class="text-xl font-bold mb-4 text-center">Your Profile</h3>
+                                <div class="flex flex-col items-center">
+                                    <div class="profile-picture-container rounded-full mb-4 mx-auto">
+                                        <img id="profile-picture" src="https://image2url.com/images/1757151047041-a584d4ed-df8a-43fa-bfa3-8680ab3984f2.png" alt="Profile Picture" class="w-32 h-32 rounded-full object-cover border-4 border-gray-600">
+                                        <label for="profile-picture-upload" class="profile-picture-overlay rounded-full">
+                                            <svg class="h-8 w-8 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                                        </label>
+                                        <input type="file" id="profile-picture-upload" class="hidden" accept="image/png, image/jpeg">
+                                    </div>
+                                    <h4 id="employee-name-profile" class="text-2xl font-bold"></h4>
+                                    <p id="employee-designation-profile" class="text-gray-400"></p>
                                 </div>
+                                <div class="mt-6 pt-6 border-t border-gray-700 space-y-3 text-gray-300">
+                                     <p><strong>Department:</strong> <span id="employee-department-profile"></span></p>
+                                     <p><strong>Team:</strong> <span id="employee-team"></span></p>
+                                     <a href="mailto:hr@keyyards.in" class="flex items-center gap-2 text-gray-400 hover:text-keyyards-green transition-colors">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>
+                                        <span>hr@keyyards.in</span>
+                                    </a>
+                                </div>
+                                <button id="profile-logout-btn" class="mt-6 w-full bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-300">
+                                    Logout
+                                </button>
+                            </div>
+                            
+                            <div class="card p-6 rounded-xl shadow-lg">
+                                <h3 class="text-xl font-bold mb-4">Payslips</h3>
+                                <ul id="payslips-list" class="space-y-2"></ul>
+                            </div>
+                            
+                            <div class="card p-6 rounded-xl shadow-lg">
+                                <h3 class="text-xl font-bold mb-4">Notifications</h3>
+                                <ul id="notifications-list" class="space-y-3 h-48 overflow-y-auto custom-scroll"></ul>
                             </div>
                         </div>
-                        <div class="p-6">
-                            <table class="task-table w-full">
-                                <thead>
-                                    <tr>
-                                        <th>Name</th>
-                                        <th>Date</th>
-                                        <th>Status</th>
-                                        <th>Priority</th>
-                                        <th>Assigned To</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="taskTableBody">
-                                    <!-- Task rows will be injected here -->
-                                </tbody>
-                            </table>
+
+                        <div class="lg:col-span-2 space-y-8">
+                            <div class="card p-6 rounded-xl shadow-lg">
+                                <h3 class="text-xl font-bold mb-4">Monthly Performance Rating</h3>
+                                <canvas id="ratings-chart"></canvas>
+                                <div class="mt-6 text-center">
+                                    <button id="ai-insight-btn" class="keyyards-bg-green text-gray-900 font-semibold py-2 px-5 rounded-lg keyyards-bg-green-hover transition-colors duration-300 text-sm">
+                                        ✨ Get AI Performance Insight
+                                    </button>
+                                    <div id="ai-insight-result" class="mt-4 text-left text-gray-300 bg-gray-800 p-4 rounded-lg hidden"></div>
+                                </div>
+                            </div>
+                            
+                            <div class="card p-6 rounded-xl shadow-lg">
+                                <h3 class="text-xl font-bold mb-4">Rating Details</h3>
+                                <ul id="monthly-ratings-list" class="space-y-2"></ul>
+                            </div>
                         </div>
                     </div>
-                </main>
-            </div>
-        </div>
-    </div>
-
-    <!-- Create Task Modal -->
-    <div id="createTaskModal" class="hidden fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-40 p-4">
-        <div class="w-full max-w-2xl p-8 rounded-2xl space-y-6 bg-white dark:bg-gray-800 transform transition-all scale-95 opacity-0" id="createTaskModalContent">
-            <div class="flex items-center justify-between pb-4 border-b dark:border-gray-700">
-                <h2 class="text-2xl font-bold text-gray-800 dark:text-white">Create New Task</h2>
-                <button id="closeCreateModalBtn" class="text-2xl text-gray-500 hover:text-gray-800 dark:hover:text-white">&times;</button>
-            </div>
-            <form id="createTaskForm" class="space-y-4 pt-4">
-                 <input id="taskTitle" type="text" placeholder="Task Title" required class="w-full p-3 bg-gray-50 dark:bg-gray-700 rounded-md border border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                 <textarea id="taskDescription" placeholder="Description" required class="w-full p-3 bg-gray-50 dark:bg-gray-700 rounded-md border border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
-                 <select id="assignedTo" required class="w-full p-3 bg-gray-50 dark:bg-gray-700 rounded-md border border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                     <option value="" disabled selected>Assign To</option>
-                 </select>
-                 <select id="taskPriority" required class="w-full p-3 bg-gray-50 dark:bg-gray-700 rounded-md border border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                     <option>Low</option>
-                     <option>Medium</option>
-                     <option>High</option>
-                     <option>Critical</option>
-                 </select>
-                 <input id="taskDueDate" type="date" required class="w-full p-3 bg-gray-50 dark:bg-gray-700 rounded-md border border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                 <button type="submit" class="w-full py-3 font-semibold rounded-md btn-primary">Add Task</button>
-             </form>
-        </div>
-    </div>
-
-    <!-- Task Details Modal -->
-    <div id="taskModal" class="hidden fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-40 p-4">
-        <div class="w-full max-w-2xl p-8 rounded-2xl space-y-6 transform transition-all scale-95 opacity-0 bg-white dark:bg-gray-800" id="taskModalContent">
-            <div class="flex items-center justify-between pb-4 border-b dark:border-gray-700">
-                <h2 id="modalTitle" class="text-2xl font-bold text-gray-800 dark:text-white">Task Title</h2>
-                <button id="closeModalBtn" class="text-2xl text-gray-500 hover:text-gray-800 dark:hover:text-white">&times;</button>
-            </div>
-            <div class="pt-4 space-y-4">
-                <p id="modalDescription" class="text-gray-600 dark:text-gray-300"></p>
-                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm">
-                    <div><strong>Assigned To:</strong> <span id="modalAssignedTo"></span></div>
-                    <div><strong>Due Date:</strong> <span id="modalDueDate"></span></div>
-                    <div><strong>Priority:</strong> <span id="modalPriority" class="font-medium px-2 py-1 rounded-full text-xs text-white"></span></div>
                 </div>
-                <form id="updateTaskForm" class="flex items-end space-x-4 pt-4">
-                    <div class="flex-grow">
-                        <label for="modalStatus" class="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">Update Status</label>
-                        <select id="modalStatus" class="w-full p-3 bg-gray-50 dark:bg-gray-700 rounded-md border border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                            <option>To Do</option>
-                            <option>In Progress</option>
-                            <option>Completed</option>
-                            <option>Blocked</option>
-                        </select>
+            </main>
+
+            <footer class="text-center py-8 mt-auto border-t border-gray-800">
+                <p class="text-gray-500 text-sm">
+                    &copy; <span id="footer-year-dashboard">2025</span> Keyyards.in. All Rights Reserved. | Employee Portal
+                </p>
+            </footer>
+        </div>
+
+        <!-- HR Portal Page -->
+        <div id="hr-portal-page" class="hidden flex-col min-h-screen">
+            <header class="card p-4 sm:p-6 flex justify-between items-center rounded-none shadow-lg z-10">
+                <div class="flex items-center space-x-4">
+                    <img src="https://image2url.com/images/1757072362158-40d68e44-3358-4dd7-a4ec-091971f5eae2.png" alt="Company Logo" class="h-16">
+                    <h1 class="text-2xl font-bold">
+                        HR <span class="keyyards-green">Dashboard</span>
+                    </h1>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <button id="chat-icon-hr" class="relative text-gray-400 hover:text-white transition-colors duration-200">
+                         <svg class="h-7 w-7" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" /></svg>
+                        <span id="unread-count-hr" class="absolute -top-1 -right-1 bg-red-600 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center hidden">0</span>
+                    </button>
+                    <button id="hr-logout-btn" class="bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-300">
+                        Logout
+                    </button>
+                </div>
+            </header>
+
+            <main class="p-4 sm:p-8 flex-grow">
+                 <div class="max-w-4xl mx-auto space-y-8">
+                    <!-- Manage Ratings Form -->
+                    <div class="card p-6 rounded-xl shadow-lg">
+                        <h3 class="text-xl font-bold mb-4">Manage Employee Ratings</h3>
+                        <form id="rating-form">
+                             <div class="mb-4">
+                                <label for="hr-employee-search" class="block mb-2 text-sm font-medium text-gray-300">Search Employee</label>
+                                <input type="text" id="hr-employee-search" class="input-field w-full p-3 rounded-lg" placeholder="Type to search...">
+                            </div>
+                            <div class="mb-4">
+                                <label for="hr-employee-select" class="block mb-2 text-sm font-medium text-gray-300">Select Employee</label>
+                                <select id="hr-employee-select" class="input-field w-full p-3 rounded-lg"></select>
+                            </div>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                                <div>
+                                    <label for="rating-month" class="block mb-2 text-sm font-medium text-gray-300">Month</label>
+                                    <input type="text" id="rating-month" placeholder="e.g., June 2025" required class="input-field w-full p-3 rounded-lg">
+                                </div>
+                                <div>
+                                    <label for="rating-value" class="block mb-2 text-sm font-medium text-gray-300">Rating (1-5)</label>
+                                    <input type="number" id="rating-value" min="1" max="5" step="0.1" required class="input-field w-full p-3 rounded-lg">
+                                </div>
+                            </div>
+                            <button type="submit" class="w-full keyyards-bg-green text-gray-900 font-bold p-3 rounded-lg keyyards-bg-green-hover transition-colors duration-300">Update Rating</button>
+                        </form>
                     </div>
-                    <button type="submit" class="px-5 py-3 font-semibold rounded-md btn-primary">Save Changes</button>
-                </form>
-            </div>
+                    <!-- Upload Payslip Form -->
+                    <div class="card p-6 rounded-xl shadow-lg">
+                        <h3 class="text-xl font-bold mb-4">Upload Payslip</h3>
+                        <form id="payslip-form">
+                             <div class="mb-4">
+                                <label for="payslip-employee-select" class="block mb-2 text-sm font-medium text-gray-300">Select Employee</label>
+                                <select id="payslip-employee-select" class="input-field w-full p-3 rounded-lg"></select>
+                            </div>
+                            <div class="mb-4">
+                                <label for="payslip-month" class="block mb-2 text-sm font-medium text-gray-300">Payslip Month</label>
+                                <input type="text" id="payslip-month" placeholder="e.g., June 2025" required class="input-field w-full p-3 rounded-lg">
+                            </div>
+                            <div class="mb-4">
+                                <label for="payslip-file" class="block mb-2 text-sm font-medium text-gray-300">Payslip PDF</label>
+                                <input type="file" id="payslip-file" accept=".pdf" required class="input-field w-full p-2 rounded-lg file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-emerald-100 file:text-emerald-700 hover:file:bg-emerald-200">
+                            </div>
+                            <button type="submit" class="w-full keyyards-bg-green text-gray-900 font-bold p-3 rounded-lg keyyards-bg-green-hover transition-colors duration-300">Upload Payslip</button>
+                        </form>
+                    </div>
+                    <!-- Post Notification Form -->
+                    <div class="card p-6 rounded-xl shadow-lg">
+                        <h3 class="text-xl font-bold mb-4">Post a Notification</h3>
+                        <form id="notification-form">
+                             <div class="mb-4 relative">
+                                <label for="notification-message" class="block mb-2 text-sm font-medium text-gray-300">Message</label>
+                                <textarea id="notification-message" rows="4" required class="input-field w-full p-3 rounded-lg" placeholder="Enter notification for all employees..."></textarea>
+                                 <div class="mt-2 flex items-center gap-2">
+                                     <input type="text" id="ai-draft-prompt" placeholder="Keywords (e.g., 'company picnic')" class="input-field w-full p-2 rounded-lg text-sm">
+                                     <button type="button" id="ai-draft-btn" class="keyyards-bg-green text-gray-900 font-semibold py-2 px-3 rounded-lg keyyards-bg-green-hover transition-colors duration-300 text-sm whitespace-nowrap">
+                                        ✨ Draft with AI
+                                    </button>
+                                 </div>
+                            </div>
+                            <button type="submit" class="w-full keyyards-bg-green text-gray-900 font-bold p-3 rounded-lg keyyards-bg-green-hover transition-colors duration-300">Post Notification</button>
+                        </form>
+                    </div>
+                 </div>
+            </main>
+
+            <footer class="text-center py-8 mt-auto border-t border-gray-800">
+                <p class="text-gray-500 text-sm">
+                    &copy; <span id="footer-year-hr">2025</span> Keyyards.in. All Rights Reserved. | HR Portal
+                </p>
+            </footer>
         </div>
+
+        <!-- Chat Panel -->
+        <div id="chat-panel-container" class="fixed inset-0 z-40 hidden">
+             <!-- All Chat Panel content -->
+             <div id="chat-overlay" class="absolute inset-0 bg-black bg-opacity-60"></div>
+             <div id="chat-panel" class="absolute top-0 right-0 h-full w-full max-w-2xl bg-gray-900 shadow-2xl flex flex-col transform translate-x-full">
+                 <header class="flex items-center justify-between p-4 border-b border-gray-700">
+                     <h2 class="text-xl font-bold">Inbox</h2>
+                     <button id="close-chat-btn" class="text-gray-400 hover:text-white">
+                         <svg class="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                     </button>
+                 </header>
+                 <div class="flex-grow flex overflow-hidden">
+                     <!-- User List -->
+                     <aside id="chat-user-list" class="w-1/3 border-r border-gray-700 overflow-y-auto custom-scroll">
+                         <!-- JS will populate this -->
+                     </aside>
+                     <!-- Message Window -->
+                     <main class="w-2/3 flex flex-col">
+                         <div id="chat-window" class="flex-grow p-4 flex flex-col overflow-y-auto custom-scroll">
+                             <!-- JS will populate messages or show a placeholder -->
+                         </div>
+                         <div id="chat-input-area" class="p-4 border-t border-gray-700">
+                              <form id="chat-form" class="flex items-center space-x-2">
+                                 <input id="chat-input" type="text" placeholder="Type a message..." class="input-field w-full p-3 rounded-lg" autocomplete="off" disabled>
+                                 <button type="submit" class="keyyards-bg-green text-gray-900 p-3 rounded-full hover:bg-emerald-500 transition-colors duration-200" disabled>
+                                     <svg class="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" /></svg>
+                                 </button>
+                             </form>
+                         </div>
+                     </main>
+                 </div>
+             </div>
+        </div>
+
+        <!-- Toast Notification Container -->
+        <div id="toast-container"></div>
     </div>
 
-    <!-- Issue Reporter Modal -->
-    <div id="issueModal" class="hidden fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-40 p-4">
-        <div class="w-full max-w-lg p-8 rounded-2xl space-y-6 bg-white dark:bg-gray-800 transform transition-all scale-95 opacity-0" id="issueModalContent">
-            <div class="flex items-center justify-between pb-4 border-b dark:border-gray-700">
-                <h2 class="text-2xl font-bold text-gray-800 dark:text-white">Report an Issue</h2>
-                <button id="closeIssueModalBtn" class="text-2xl text-gray-500 hover:text-gray-800 dark:hover:text-white">&times;</button>
-            </div>
-            <div class="space-y-4 pt-4">
-                <p>Encountering a problem? Please don't hesitate to reach out.</p>
-                <p>To get the quickest support, please contact the developer team directly with a description of the issue you are facing.</p>
-                <div class="p-4 bg-gray-100 dark:bg-gray-700 rounded-lg">
-                    <p class="font-semibold text-gray-800 dark:text-white">Contact: <a href="mailto:dev-support@keyyards.in" class="font-normal text-blue-600 hover:underline">dev-support@keyyards.in</a></p>
-                </div>
-            </div>
-        </div>
-    </div>
-    
-    <!-- Theme Warning Modal -->
-    <div id="themeWarningModal" class="hidden fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4">
-        <div class="w-full max-w-md p-6 rounded-lg bg-white dark:bg-gray-800 transform transition-all scale-95 opacity-0" id="themeWarningModalContent">
-            <h2 class="text-lg font-semibold text-gray-900 dark:text-white">Switch to Light Theme?</h2>
-            <p class="mt-2 text-sm text-gray-600 dark:text-gray-400">Please be aware that switching to light theme may affect the color contrast and readability of some text elements.</p>
-            <div class="mt-6 flex justify-end space-x-3">
-                <button id="cancelThemeChangeBtn" class="px-4 py-2 text-sm font-medium bg-gray-200 dark:bg-gray-600 rounded-md hover:bg-gray-300 dark:hover:bg-gray-500">No, Cancel</button>
-                <button id="confirmThemeChangeBtn" class="px-4 py-2 text-sm font-medium rounded-md btn-primary">Yes, Proceed</button>
-            </div>
-        </div>
-    </div>
-
-
-    <!-- Supabase Configuration and App Logic -->
-    <script type="module">
-        import { createClient } from 'https://cdn.skypack.dev/@supabase/supabase-js';
-
-        const SUPABASE_URL = 'https://hgmmivztqwgdzcobiulu.supabase.co';
-        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhnbW1pdnp0cXdnZHpjb2JpdWx1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTcyNTM4MDYsImV4cCI6MjA3MjgyOTgwNn0.MS1BatLDBGL8scF7bK9so37D_84oAnU5o5HkS3sdILU';
-        const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-        
-        // UI element references
-        const loginScreen = document.getElementById('loginScreen');
-        const dashboardContainer = document.getElementById('dashboardContainer');
-        const loginForm = document.getElementById('loginForm');
-        const logoutBtn = document.getElementById('logoutBtn');
-        const loginMessage = document.getElementById('loginMessage');
-        const userNameDisplay = document.getElementById('userNameDisplay');
-        const taskTableBody = document.getElementById('taskTableBody');
-        const taskModal = document.getElementById('taskModal');
-        const taskModalContent = document.getElementById('taskModalContent');
-        const closeModalBtn = document.getElementById('closeModalBtn');
-        const updateTaskForm = document.getElementById('updateTaskForm');
-        const createNewTaskBtn = document.getElementById('createNewTaskBtn');
-        const createNewTaskBtnContainer = document.getElementById('createNewTaskBtnContainer');
-        const createTaskModal = document.getElementById('createTaskModal');
-        const createTaskModalContent = document.getElementById('createTaskModalContent');
-        const closeCreateModalBtn = document.getElementById('closeCreateModalBtn');
-        const createTaskForm = document.getElementById('createTaskForm');
-        const assignedToSelect = document.getElementById('assignedTo');
-        const allItemsBtn = document.getElementById('allItemsBtn');
-        const myItemsBtn = document.getElementById('myItemsBtn');
-        const myTasksBtn = document.getElementById('myTasksBtn');
-        const reportIssueBtn = document.getElementById('reportIssueBtn');
-        const issueModal = document.getElementById('issueModal');
-        const issueModalContent = document.getElementById('issueModalContent');
-        const closeIssueModalBtn = document.getElementById('closeIssueModalBtn');
-        const themeToggle = document.getElementById('themeToggle');
-        const themeSunIcon = themeToggle.querySelector('.fa-sun');
-        const themeMoonIcon = themeToggle.querySelector('.fa-moon');
-        const themeWarningModal = document.getElementById('themeWarningModal');
-        const themeWarningModalContent = document.getElementById('themeWarningModalContent');
-        const confirmThemeChangeBtn = document.getElementById('confirmThemeChangeBtn');
-        const cancelThemeChangeBtn = document.getElementById('cancelThemeChangeBtn');
-
-        let session = {
-            teamId: null,
-            teamName: null,
-            userId: null,
-            userName: null,
-            role: null,
-        };
-        
-        let currentView = 'all'; // 'all' or 'my'
-
-        // --- Core Application Logic ---
-        const showToast = (message, type = 'info') => {
-            const toastContainer = document.getElementById('toastContainer');
-            if (!toastContainer) return;
-            const toast = document.createElement('div');
-            toast.className = `p-4 rounded-xl shadow-lg text-white transform transition-all duration-300 translate-x-full opacity-0 flex items-center space-x-2`;
-            let bgColor = type === 'success' ? 'bg-green-500' : type === 'error' ? 'bg-red-500' : 'bg-blue-500';
-            let icon = type === 'success' ? '<i class="fas fa-check-circle"></i>' : type === 'error' ? '<i class="fas fa-exclamation-circle"></i>' : '<i class="fas fa-info-circle"></i>';
-            toast.classList.add(bgColor);
-            toast.innerHTML = `${icon}<span>${message}</span>`;
-            toastContainer.appendChild(toast);
-            setTimeout(() => toast.classList.replace('translate-x-full', 'translate-x-0'), 100);
-            setTimeout(() => {
-                toast.classList.replace('translate-x-0', 'translate-x-full');
-                setTimeout(() => toast.remove(), 300);
-            }, 5000);
-        };
-
-        const applyTheme = (theme) => {
-            const isDarkMode = theme === 'dark-mode';
-            document.documentElement.classList.toggle('dark', isDarkMode);
-            localStorage.setItem('theme', theme);
-            if (themeSunIcon && themeMoonIcon) {
-                themeSunIcon.classList.toggle('hidden', isDarkMode);
-                themeMoonIcon.classList.toggle('hidden', !isDarkMode);
-            }
-        };
-
-        const showDashboard = () => {
-            if(loginScreen) loginScreen.classList.add('hidden');
-            if(dashboardContainer) dashboardContainer.classList.remove('hidden');
-        };
-
-        const showLogin = () => {
-            if(dashboardContainer) dashboardContainer.classList.add('hidden');
-            if(loginScreen) loginScreen.classList.remove('hidden');
-            if(loginForm) loginForm.reset();
-            if(loginMessage) loginMessage.textContent = '';
-        };
-
-        const loadUsers = async () => {
-            if (session.role === 'team_lead' && assignedToSelect) {
-                try {
-                    const { data: users, error } = await supabase.from('users').select('id, name').eq('team_id', session.teamId);
-                    if (error) throw error;
-                    assignedToSelect.innerHTML = '<option value="" disabled selected>Assign To</option>';
-                    users.forEach(user => {
-                        const option = document.createElement('option');
-                        option.value = user.id;
-                        option.textContent = user.name;
-                        assignedToSelect.appendChild(option);
-                    });
-                } catch (error) {
-                    console.error('Error loading users:', error);
-                    showToast('Failed to load users for task assignment.', 'error');
-                }
-            }
-        };
-        
-        const loadTasks = async (view = 'all') => {
-            try {
-                let query = supabase.from('tasks').select('*,users(name)').eq('team_id', session.teamId);
-                if (view === 'my') {
-                    query = query.eq('assigned_to', session.userId);
-                }
-                const { data: tasks, error } = await query.order('created_at', { ascending: false });
-                if (error) throw error;
-                renderTasks(tasks);
-            } catch (error) {
-                console.error('Error loading tasks:', error);
-                showToast('Failed to load tasks.', 'error');
-            }
-        };
-        
-        const renderTasks = (tasks) => {
-            if (!taskTableBody) return;
-            taskTableBody.innerHTML = ''; 
-            const renderPriorityStars = (priority) => {
-                let stars = '';
-                const starCount = { 'Low': 1, 'Medium': 2, 'High': 3, 'Critical': 4 };
-                const count = starCount[priority] || 0;
-                for (let i = 0; i < 5; i++) {
-                    stars += `<i class="fas fa-star ${i < count ? 'text-yellow-400' : 'text-gray-300 dark:text-gray-600'}"></i>`;
-                }
-                return `<div class="flex items-center space-x-1">${stars}</div>`;
-            };
-            if (tasks.length === 0) {
-                taskTableBody.innerHTML = `<tr><td colspan="5" class="text-center text-gray-500 py-10">No tasks found.</td></tr>`;
-                return;
-            }
-            tasks.forEach(task => {
-                const row = document.createElement('tr');
-                row.className = 'hover:bg-gray-50 dark:hover:bg-gray-700/50 cursor-pointer';
-                row.setAttribute('data-task-id', task.id);
-                const statusClass = `status-badge-${task.status.replace(/\s/g, '-').toLowerCase()}`;
-                row.innerHTML = `
-                    <td class="font-semibold text-gray-800 dark:text-gray-200">${task.title}</td>
-                    <td>${new Date(task.due_date).toLocaleDateString()}</td>
-                    <td><span class="status-badge ${statusClass}">${task.status}</span></td>
-                    <td>${renderPriorityStars(task.priority)}</td>
-                    <td>${task.users ? task.users.name : 'Unassigned'}</td>
-                `;
-                row.addEventListener('click', () => openTaskModal(task));
-                taskTableBody.appendChild(row);
-            });
-        };
-
-        const openModal = (modal, content) => {
-            if (!modal) return;
-            modal.classList.remove('hidden');
-            setTimeout(() => content.classList.remove('scale-95', 'opacity-0'), 10);
-        };
-
-        const closeModal = (modal, content) => {
-            if (!modal) return;
-            content.classList.add('scale-95', 'opacity-0');
-            setTimeout(() => modal.classList.add('hidden'), 300);
-        };
-
-        const openTaskModal = (task) => {
-            if (!taskModal || !task) return;
-            openModal(taskModal, taskModalContent);
-            document.getElementById('modalTitle').textContent = task.title;
-            document.getElementById('modalDescription').textContent = task.description;
-            document.getElementById('modalAssignedTo').textContent = task.users ? task.users.name : 'Unassigned';
-            document.getElementById('modalDueDate').textContent = new Date(task.due_date).toLocaleDateString();
-            const prioritySpan = document.getElementById('modalPriority');
-            prioritySpan.textContent = task.priority;
-            const priorityColors = { 'Low': 'bg-green-500', 'Medium': 'bg-yellow-500', 'High': 'bg-red-500', 'Critical': 'bg-red-700' };
-            prioritySpan.className = `font-medium px-2 py-1 rounded-full text-xs text-white ${priorityColors[task.priority]}`;
-            const statusSelect = document.getElementById('modalStatus');
-            statusSelect.value = task.status;
-            const updateButton = updateTaskForm.querySelector('button');
-            if (session.role === 'employee' && task.assigned_to !== session.userId) {
-                statusSelect.disabled = true;
-                updateButton.disabled = true;
-                updateButton.textContent = 'Not assigned to you';
-                updateButton.classList.add('opacity-50', 'cursor-not-allowed');
-            } else {
-                statusSelect.disabled = false;
-                updateButton.disabled = false;
-                updateButton.textContent = 'Save Changes';
-                updateButton.classList.remove('opacity-50', 'cursor-not-allowed');
-            }
-            updateTaskForm.setAttribute('data-task-id', task.id);
-        };
-        
-        const setupRealtimeSubscriptions = () => {
-            // Task Subscription
-            supabase.channel('public:tasks').on('postgres_changes', { event: '*', schema: 'public', table: 'tasks' }, () => loadTasks(currentView)).subscribe();
-        };
-
-        const loadDashboard = async () => {
-            const sessionData = JSON.parse(localStorage.getItem('session'));
-            if (!sessionData) return showLogin();
-            session = sessionData;
-            if (userNameDisplay) userNameDisplay.textContent = session.userName;
-            if (session.role === 'team_lead') {
-                createNewTaskBtnContainer.classList.remove('hidden');
-                await loadUsers(); 
-            } else {
-                createNewTaskBtnContainer.classList.add('hidden');
-            }
-            await loadTasks(currentView);
-            setupRealtimeSubscriptions();
-            updateSidebarActiveState();
-        };
-
-        const updateSidebarActiveState = () => {
-            document.querySelectorAll('.sidebar-link').forEach(link => link.classList.remove('active'));
-            if (currentView === 'all') allItemsBtn.classList.add('active');
-            else {
-                myItemsBtn.classList.add('active');
-                myTasksBtn.classList.add('active');
-            }
-        };
-
+    <script>
         document.addEventListener('DOMContentLoaded', () => {
-            const savedTheme = localStorage.getItem('theme') || 'dark-mode';
-            applyTheme(savedTheme);
+            document.getElementById('footer-year-login').textContent = new Date().getFullYear();
+            document.getElementById('footer-year-dashboard').textContent = new Date().getFullYear();
+            document.getElementById('footer-year-hr').textContent = new Date().getFullYear();
+
+            // --- ALL DOM ELEMENT REFERENCES ---
+            const app = document.getElementById('app');
+            const loader = document.getElementById('loader');
+            const loginPage = document.getElementById('login-page');
+            const dashboardPage = document.getElementById('dashboard-page');
+            const hrPortalPage = document.getElementById('hr-portal-page');
+            const loginForm = document.getElementById('login-form');
+            const loginError = document.getElementById('login-error');
+            const hrLogoutBtn = document.getElementById('hr-logout-btn');
+            const welcomeName = document.getElementById('welcome-name');
+            const ratingsChartCanvas = document.getElementById('ratings-chart');
+            const monthlyRatingsList = document.getElementById('monthly-ratings-list');
+            const aiInsightBtn = document.getElementById('ai-insight-btn');
+            const aiInsightResult = document.getElementById('ai-insight-result');
+            const profilePicture = document.getElementById('profile-picture');
+            const profilePictureUpload = document.getElementById('profile-picture-upload');
+            const employeeNameProfile = document.getElementById('employee-name-profile');
+            const employeeDesignationProfile = document.getElementById('employee-designation-profile');
+            const employeeDepartmentProfile = document.getElementById('employee-department-profile');
+            const employeeTeam = document.getElementById('employee-team');
+            const profileLogoutBtn = document.getElementById('profile-logout-btn');
+            const payslipsList = document.getElementById('payslips-list');
+            const notificationsList = document.getElementById('notifications-list');
+            const hrEmployeeSearch = document.getElementById('hr-employee-search');
+            const hrEmployeeSelect = document.getElementById('hr-employee-select');
+            const ratingForm = document.getElementById('rating-form');
+            const ratingMonth = document.getElementById('rating-month');
+            const ratingValue = document.getElementById('rating-value');
+            const payslipForm = document.getElementById('payslip-form');
+            const payslipEmployeeSelect = document.getElementById('payslip-employee-select');
+            const payslipMonth = document.getElementById('payslip-month');
+            const payslipFile = document.getElementById('payslip-file');
+            const notificationForm = document.getElementById('notification-form');
+            const notificationMessage = document.getElementById('notification-message');
+            const aiDraftPrompt = document.getElementById('ai-draft-prompt');
+            const aiDraftBtn = document.getElementById('ai-draft-btn');
+            const toastContainer = document.getElementById('toast-container');
+            const chatIconEmployee = document.getElementById('chat-icon-employee');
+            const unreadCountEmployee = document.getElementById('unread-count-employee');
+            const chatIconHr = document.getElementById('chat-icon-hr');
+            const unreadCountHr = document.getElementById('unread-count-hr');
+            const chatPanelContainer = document.getElementById('chat-panel-container');
+            const chatPanel = document.getElementById('chat-panel');
+            const chatOverlay = document.getElementById('chat-overlay');
+            const closeChatBtn = document.getElementById('close-chat-btn');
+            const chatUserList = document.getElementById('chat-user-list');
+            const chatWindow = document.getElementById('chat-window');
+            const chatForm = document.getElementById('chat-form');
+            const chatInput = document.getElementById('chat-input');
             
-            logoutBtn.addEventListener('click', async () => {
-                localStorage.removeItem('session');
+            // --- GLOBAL STATE ---
+            let loggedInUser = null;
+            let allEmployees = [];
+            let ratingsChartInstance = null;
+            let portalSubscriptions = [];
+
+            // --- SUPABASE CLIENT SETUP ---
+            const SUPABASE_URL = 'https://hvjrgfpmfljuhqnzitqa.supabase.co';
+            const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh2anJnZnBtZmxqdWhxbnppdHFhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTcwNjYxNzYsImV4cCI6MjA3MjY0MjE3Nn0.gmpK15dMfXaA-nJLYsQ419Tv0A_NCAbGmUiORqUm9Tw';
+            const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+            // --- EVENT LISTENERS ---
+            loginForm.addEventListener('submit', handleLogin);
+            hrLogoutBtn.addEventListener('click', handleLogout);
+            profileLogoutBtn.addEventListener('click', handleLogout);
+            profilePictureUpload.addEventListener('change', handleProfilePictureUpload);
+            ratingForm.addEventListener('submit', handleRatingUpdate);
+            payslipForm.addEventListener('submit', handlePayslipUpload);
+            notificationForm.addEventListener('submit', handleNotificationPost);
+            hrEmployeeSearch.addEventListener('input', (e) => populateEmployeeDropdown(allEmployees, e.target.value));
+            aiInsightBtn.addEventListener('click', getPerformanceInsight);
+            aiDraftBtn.addEventListener('click', draftNotification);
+            chatIconEmployee.addEventListener('click', openChatPanel);
+            chatIconHr.addEventListener('click', openChatPanel);
+            closeChatBtn.addEventListener('click', closeChatPanel);
+            chatOverlay.addEventListener('click', closeChatPanel);
+            chatForm.addEventListener('submit', handleSendMessage);
+            
+            // --- CORE FUNCTIONS ---
+            function showLoader() { loader.classList.remove('hidden'); }
+            function hideLoader() { loader.classList.add('hidden'); }
+            
+            async function handleLogin(event) {
+                event.preventDefault();
+                showLoader();
+                loginError.classList.add('hidden');
+                
+                try {
+                    const formData = new FormData(loginForm);
+                    const employeeId = formData.get('employee_id');
+                    const password = formData.get('password');
+
+                    if (!employeeId || !password) {
+                        loginError.textContent = 'Employee ID and Password cannot be empty.';
+                        loginError.classList.remove('hidden');
+                        return;
+                    }
+
+                    const { data, error } = await supabase
+                        .from('employees').select('*').eq('employee_id', employeeId).eq('password', password);
+
+                    if (error) throw error;
+
+                    if (!data || data.length === 0) {
+                        loginError.textContent = 'Invalid credentials. Please check your Employee ID and Password.';
+                        loginError.classList.remove('hidden');
+                    } else {
+                        const employee = data[0];
+                        loggedInUser = employee;
+                        
+                        showToast("Login successful!");
+
+                        setTimeout(async () => {
+                            await setupRealtimeSubscriptions();
+                            if (employee.role === 'hr') {
+                                loginPage.classList.add('hidden');
+                                hrPortalPage.style.display = 'flex';
+                                await loadHrPortalData();
+                            } else {
+                                loginPage.classList.add('hidden');
+                                dashboardPage.style.display = 'flex';
+                                await loadDashboardData();
+                            }
+                        }, 500);
+                    }
+                } catch (err) {
+                    console.error("A critical error occurred during login:", err);
+                    loginError.textContent = "An unexpected error occurred. Please try again.";
+                    loginError.classList.remove('hidden');
+                } finally {
+                    setTimeout(hideLoader, 1000);
+                }
+            }
+
+            function handleLogout() {
+                loggedInUser = null;
                 supabase.removeAllChannels();
-                showLogin();
-                showToast('Logged out successfully.', 'info');
-            });
-
-            createNewTaskBtn.addEventListener('click', () => openModal(createTaskModal, createTaskModalContent));
-            closeCreateModalBtn.addEventListener('click', () => closeModal(createTaskModal, createTaskModalContent));
-            createTaskModal.addEventListener('click', (e) => e.target.id === 'createTaskModal' && closeModal(createTaskModal, createTaskModalContent));
-
-            createTaskForm.addEventListener('submit', async (e) => {
-                e.preventDefault();
-                const task = {
-                    title: document.getElementById('taskTitle').value,
-                    description: document.getElementById('taskDescription').value,
-                    assigned_to: document.getElementById('assignedTo').value,
-                    priority: document.getElementById('taskPriority').value,
-                    due_date: document.getElementById('taskDueDate').value,
-                    status: 'To Do',
-                    team_id: session.teamId,
-                };
-                try {
-                    const { error } = await supabase.from('tasks').insert([task]);
-                    if (error) throw error;
-                    showToast('Task created successfully!', 'success');
-                    createTaskForm.reset();
-                    closeModal(createTaskModal, createTaskModalContent);
-                } catch (error) {
-                    console.error('Error creating task:', error);
-                    showToast('Failed to create task.', 'error');
+                portalSubscriptions = [];
+                
+                dashboardPage.style.display = 'none';
+                hrPortalPage.style.display = 'none';
+                loginPage.classList.remove('hidden');
+                loginForm.reset();
+                 if (ratingsChartInstance) {
+                    ratingsChartInstance.destroy();
+                    ratingsChartInstance = null;
                 }
-            });
+            }
             
-            updateTaskForm.addEventListener('submit', async (e) => {
-                e.preventDefault();
-                const taskId = e.target.getAttribute('data-task-id');
-                const newStatus = document.getElementById('modalStatus').value;
+            async function loadDashboardData() {
                 try {
-                    const { error } = await supabase.from('tasks').update({ status: newStatus }).eq('id', taskId);
-                    if (error) throw error;
-                    showToast('Task updated successfully!', 'success');
-                    closeModal(taskModal, taskModalContent);
-                } catch (error) {
-                    console.error('Error updating task:', error);
-                    showToast('Failed to update task.', 'error');
-                }
-            });
-            
-            closeModalBtn.addEventListener('click', () => closeModal(taskModal, taskModalContent));
-            taskModal.addEventListener('click', (e) => e.target.id === 'taskModal' && closeModal(taskModal, taskModalContent));
+                    const { data: employee, error: userError } = await supabase
+                        .from('employees').select(`*, teams (name)`).eq('id', loggedInUser.id).single();
+                    if (userError) throw userError;
+                    loggedInUser = employee;
 
-            const setView = (view) => {
-                currentView = view;
-                loadTasks(currentView);
-                updateSidebarActiveState();
-            };
-            allItemsBtn.addEventListener('click', (e) => { e.preventDefault(); setView('all'); });
-            myItemsBtn.addEventListener('click', (e) => { e.preventDefault(); setView('my'); });
-            myTasksBtn.addEventListener('click', (e) => { e.preventDefault(); setView('my'); });
+                    welcomeName.textContent = employee.name.split(' ')[0];
+                    employeeNameProfile.textContent = employee.name;
+                    employeeDesignationProfile.textContent = employee.designation;
+                    employeeDepartmentProfile.textContent = employee.department;
+                    employeeTeam.textContent = employee.teams ? employee.teams.name : 'Not Assigned';
+                    profilePicture.src = employee.profile_picture_url || 'https://image2url.com/images/1757151047041-a584d4ed-df8a-43fa-bfa3-8680ab3984f2.png';
 
-            reportIssueBtn.addEventListener('click', () => openModal(issueModal, issueModalContent));
-            closeIssueModalBtn.addEventListener('click', () => closeModal(issueModal, issueModalContent));
-            issueModal.addEventListener('click', (e) => e.target.id === 'issueModal' && closeModal(issueModal, issueModalContent));
+                    const { data: ratings, error: ratingsError } = await supabase
+                        .from('ratings').select('id, month, rating').eq('employee_id', employee.id);
+                    if(ratingsError) throw ratingsError;
 
-            themeToggle.addEventListener('click', () => {
-                if (document.documentElement.classList.contains('dark')) {
-                    openModal(themeWarningModal, themeWarningModalContent);
-                } else {
-                    applyTheme('dark-mode');
-                }
-            });
+                    monthlyRatingsList.innerHTML = '';
+                    if (ratings && ratings.length > 0) {
+                        renderRatingsChart(ratings);
+                        ratings.forEach(r => {
+                             const li = document.createElement('li');
+                             li.id = `rating-${r.id}`;
+                             li.className = 'flex justify-between items-center bg-gray-800 p-2 rounded';
+                             li.innerHTML = `<span>${r.month}</span><span class="font-bold keyyards-green">${r.rating}/5</span>`;
+                             monthlyRatingsList.appendChild(li);
+                        });
+                    } else {
+                        renderRatingsChart([]);
+                        monthlyRatingsList.innerHTML = '<li class="text-gray-400">No rating data available yet.</li>';
+                    }
 
-            confirmThemeChangeBtn.addEventListener('click', () => {
-                applyTheme('light-mode');
-                closeModal(themeWarningModal, themeWarningModalContent);
-            });
-            cancelThemeChangeBtn.addEventListener('click', () => closeModal(themeWarningModal, themeWarningModalContent));
-
-            loginForm.addEventListener('submit', async (e) => {
-                e.preventDefault();
-                loginMessage.textContent = 'Logging in...';
-                try {
-                    const teamIdInput = loginForm.teamId.value;
-                    const username = loginForm.username.value;
-                    const password = loginForm.password.value;
-
-                    // Step 1: Validate against your custom tables
-                    const { data: teamData, error: teamError } = await supabase.from('teams').select('team_id, team_name, password').eq('team_id', teamIdInput).single();
-                    if (teamError || !teamData) throw new Error('Invalid Team ID.');
-                    if (teamData.password !== password) throw new Error('Invalid team password.');
+                    let payslips = employee.payslips;
+                    if (typeof payslips === 'string') {
+                        try { payslips = JSON.parse(payslips); } catch (e) { payslips = []; }
+                    }
+                    if (!Array.isArray(payslips)) payslips = [];
                     
-                    const { data: userData, error: userError } = await supabase.from('users').select('id, name, role').eq('team_id', teamData.team_id).eq('name', username).single();
-                    if (userError || !userData) throw new Error('Invalid username for this team.');
+                    payslipsList.innerHTML = '';
+                    if (payslips.length > 0) {
+                        payslips.forEach((payslip, index) => {
+                            const li = document.createElement('li');
+                            li.id = `payslip-${index}`;
+                            li.innerHTML = `<a href="${payslip.url}" target="_blank" download class="flex items-center justify-between p-2 rounded hover:bg-gray-800 transition-colors duration-200">
+                                <span>${payslip.month}</span>
+                                <svg class="h-5 w-5 keyyards-green" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+                            </a>`;
+                            payslipsList.appendChild(li);
+                        });
+                    } else {
+                         payslipsList.innerHTML = '<li class="text-gray-400">No payslips found.</li>';
+                    }
 
-                    // Step 2: Set the session without Supabase Auth
-                    session = { teamId: teamData.team_id, teamName: teamData.team_name, userId: userData.id, userName: userData.name, role: userData.role };
-                    localStorage.setItem('session', JSON.stringify(session));
-
-                    await loadDashboard();
-                    showDashboard();
-                    showToast('Login successful!', 'success');
+                    const { data: notifications, error: notificationsError } = await supabase
+                        .from('notifications').select('*').order('created_at', { ascending: false });
+                    if (notificationsError) throw notificationsError;
+                    
+                    notificationsList.innerHTML = '';
+                    if (notifications) {
+                        notifications.forEach(notif => {
+                            const li = document.createElement('li');
+                            li.id = `notification-${notif.id}`;
+                            li.className = 'p-2 border-b border-gray-700';
+                            li.innerHTML = `<p>${notif.message}</p><p class="text-xs text-gray-500 mt-1">${new Date(notif.created_at).toLocaleString()}</p>`;
+                            notificationsList.appendChild(li);
+                        });
+                    }
                 } catch (error) {
-                    console.error('Login error:', error);
-                    loginMessage.textContent = error.message;
-                    showToast(error.message, 'error');
+                    console.error("Error loading dashboard data:", error);
                 }
-            });
+            }
+
+            function renderRatingsChart(ratings) {
+                if (ratingsChartInstance) ratingsChartInstance.destroy();
+                const ctx = ratingsChartCanvas.getContext('2d');
+                ratingsChartInstance = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: ratings.map(r => r.month),
+                        datasets: [{
+                            label: 'Monthly Rating',
+                            data: ratings.map(r => r.rating),
+                            backgroundColor: 'rgba(52, 211, 153, 0.2)',
+                            borderColor: 'rgba(52, 211, 153, 1)',
+                            borderWidth: 2, tension: 0.4,
+                            pointBackgroundColor: 'rgba(52, 211, 153, 1)', pointRadius: 5
+                        }]
+                    },
+                    options: {
+                        scales: {
+                            y: { beginAtZero: true, max: 5, grid: { color: '#374151' }, ticks: { color: '#9CA3AF' } },
+                            x: { grid: { color: '#374151' }, ticks: { color: '#9CA3AF' } }
+                        },
+                        plugins: { legend: { labels: { color: '#E5E7EB' } } }
+                    }
+                });
+            }
             
-            // --- INITIAL LOAD CHECK ---
-            const storedSession = localStorage.getItem('session');
-            if (storedSession) {
+            async function setupRealtimeSubscriptions() {
+                supabase.removeAllChannels();
+
+                const handleRealtimePayload = (payload) => {
+                    console.log('Realtime event received:', payload);
+                    if (loggedInUser && payload.schema === 'public') {
+                        const affectsCurrentUser = 
+                            (payload.table === 'ratings' && ( (payload.old && payload.old.employee_id === loggedInUser.id) || (payload.new && payload.new.employee_id === loggedInUser.id))) ||
+                            (payload.table === 'employees' && ( (payload.old && payload.old.id === loggedInUser.id) || (payload.new && payload.new.id === loggedInUser.id)));
+
+                        if (affectsCurrentUser || payload.table === 'notifications') {
+                            console.log(`Refreshing dashboard due to a change in '${payload.table}'.`);
+                            loadDashboardData();
+                        }
+                    }
+                };
+
+                const allTablesSub = supabase.channel('public-changes')
+                    .on('postgres_changes', { event: '*', schema: 'public' }, handleRealtimePayload)
+                    .subscribe();
+
+                const messagesSub = supabase.channel('public-messages-insert')
+                    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages', filter: `receiver_id=eq.${loggedInUser.id}` }, handleNewMessage)
+                    .subscribe();
+
+                portalSubscriptions = [allTablesSub, messagesSub];
+            }
+            
+            async function handleProfilePictureUpload(event) {
+                const file = event.target.files[0];
+                if (!file) return;
+
+                showLoader();
                 try {
-                    session = JSON.parse(storedSession);
-                    // This is a simplified session restoration. For full security, you'd re-authenticate.
-                    loadDashboard().then(() => showDashboard());
-                } catch (e) {
-                    localStorage.removeItem('session');
-                    showLogin();
-                } 
-            } else {
-                showLogin();
+                    const filePath = `${loggedInUser.id}/${Date.now()}_${file.name}`;
+
+                    const { error: uploadError } = await supabase.storage
+                        .from('profile-pictures').upload(filePath, file, { upsert: false });
+
+                    if (uploadError) throw uploadError;
+
+                    const { data: urlData } = supabase.storage
+                        .from('profile-pictures').getPublicUrl(filePath);
+                    
+                    const { error: updateError } = await supabase
+                        .from('employees').update({ profile_picture_url: urlData.publicUrl }).eq('id', loggedInUser.id);
+                    
+                    if (updateError) throw updateError;
+                    
+                    profilePicture.src = urlData.publicUrl;
+                    showToast("Profile picture updated successfully!");
+
+                } catch (error) {
+                    console.error("Error uploading profile picture:", error);
+                    showToast("Failed to upload profile picture.", true);
+                } finally {
+                    hideLoader();
+                }
+            }
+
+            async function getPerformanceInsight() {
+                aiInsightBtn.disabled = true;
+                aiInsightResult.classList.remove('hidden');
+                aiInsightResult.textContent = 'Generating feedback...';
+                try {
+                    const { data: ratings, error } = await supabase.from('ratings').select('month, rating').eq('employee_id', loggedInUser.id);
+                    if (error) throw error;
+                    if (!ratings || ratings.length === 0) {
+                         aiInsightResult.textContent = 'Not enough data for an insight.';
+                         return;
+                    }
+                    const ratingsText = ratings.map(r => `${r.month}: ${r.rating}/5`).join(', ');
+                    const prompt = `Based on these monthly performance ratings (${ratingsText}), write a short, encouraging, and constructive performance summary for the employee. Keep it positive and motivational.`;
+                    const apiKey = "";
+                    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
+                    const response = await fetch(apiUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+                    });
+                    if (!response.ok) throw new Error(`API call failed with status ${response.status}`);
+                    const result = await response.json();
+                    aiInsightResult.textContent = result.candidates[0].content.parts[0].text;
+                } catch (error) {
+                    console.error("Gemini API error:", error);
+                    aiInsightResult.textContent = 'Could not generate insight at this time.';
+                } finally {
+                    aiInsightBtn.disabled = false;
+                }
+            }
+
+            async function loadHrPortalData() {
+                showLoader();
+                try {
+                    const { data, error } = await supabase.from('employees').select('*');
+                    if (error) throw error;
+                    allEmployees = data || [];
+                    populateEmployeeDropdown(allEmployees);
+                } catch(error) {
+                    console.error("Error loading HR portal data:", error);
+                    showToast("Could not load employee data.", true);
+                } finally {
+                    hideLoader();
+                }
+            }
+
+            function populateEmployeeDropdown(employees, filter = '') {
+                const filtered = employees.filter(emp => emp.name.toLowerCase().includes(filter.toLowerCase()));
+                hrEmployeeSelect.innerHTML = filtered.map(emp => `<option value="${emp.id}">${emp.name} (${emp.employee_id})</option>`).join('');
+                payslipEmployeeSelect.innerHTML = hrEmployeeSelect.innerHTML;
+            }
+            
+            async function handleRatingUpdate(e) {
+                e.preventDefault();
+                showLoader();
+                try {
+                    const employeeId = hrEmployeeSelect.value;
+                    const month = ratingMonth.value.trim();
+                    const rating = ratingValue.value;
+
+                    if (!month || !rating) {
+                        showToast("Month and Rating cannot be empty.", true);
+                        return;
+                    }
+
+                    const { error } = await supabase.from('ratings').upsert({
+                        employee_id: employeeId,
+                        month: month,
+                        rating: rating
+                    }, {
+                        onConflict: 'employee_id, month'
+                    });
+                    
+                    if (error) throw error;
+                    
+                    showToast("Rating updated successfully.");
+                    ratingForm.reset();
+                } catch (error) {
+                    console.error("Error handling rating update:", error);
+                     if (error.message.includes('constraint')) {
+                         showToast(`Database error. Please ensure a unique constraint is set on the 'ratings' table for 'employee_id' and 'month'.`, true);
+                    } else {
+                        showToast(`Failed to process rating update.`, true);
+                    }
+                } finally {
+                    hideLoader();
+                }
+            }
+            
+            async function handlePayslipUpload(e) {
+                e.preventDefault();
+                showLoader();
+                try {
+                    const employeeId = payslipEmployeeSelect.value;
+                    const month = payslipMonth.value;
+                    const file = payslipFile.files[0];
+                    if (!file) {
+                        showToast('Please select a file to upload.', true);
+                        return;
+                    }
+                    const filePath = `${employeeId}/${month.replace(/\s+/g, '-')}-${Date.now()}.pdf`;
+                    const { error: uploadError } = await supabase.storage.from('payslips').upload(filePath, file);
+                    if (uploadError) throw uploadError;
+                    const { data: urlData } = supabase.storage.from('payslips').getPublicUrl(filePath);
+                    const { data: current, error: fetchError } = await supabase.from('employees').select('payslips').eq('id', employeeId).single();
+                    if (fetchError) throw fetchError;
+                    let existingPayslips = current.payslips;
+                    if (typeof existingPayslips === 'string') {
+                        try { existingPayslips = JSON.parse(existingPayslips); } catch (e) { existingPayslips = []; }
+                    }
+                    if (!Array.isArray(existingPayslips)) existingPayslips = [];
+                    const newPayslips = [...existingPayslips, { month, url: urlData.publicUrl }];
+                    const { error: updateError } = await supabase.from('employees').update({ payslips: newPayslips }).eq('id', employeeId);
+                    if (updateError) throw updateError;
+                    showToast("PDF uploaded successfully.");
+                    payslipForm.reset();
+                } catch (error) {
+                    console.error("Error during payslip upload:", error);
+                    showToast('An error occurred during the upload process.', true);
+                } finally {
+                    hideLoader();
+                }
+            }
+
+            async function handleNotificationPost(e) {
+                e.preventDefault();
+                showLoader();
+                try {
+                    const message = notificationMessage.value;
+                    const { error } = await supabase.from('notifications').insert([{ message: message }]);
+                    if (error) throw error;
+                    showToast('Notification posted successfully.');
+                    notificationForm.reset();
+                } catch(error) {
+                    console.error("Error posting notification:", error);
+                    showToast('Failed to post notification.', true);
+                } finally {
+                    hideLoader();
+                }
+            }
+
+            async function draftNotification() {
+                const promptText = aiDraftPrompt.value;
+                if (!promptText) return;
+                aiDraftBtn.disabled = true;
+                notificationMessage.value = 'Drafting with AI...';
+                try {
+                    const prompt = `Write a professional but friendly company announcement for an employee portal based on these keywords: "${promptText}".`;
+                    const apiKey = "";
+                    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
+                    const response = await fetch(apiUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+                    });
+                    if (!response.ok) throw new Error(`API call failed with status ${response.status}`);
+                    const result = await response.json();
+                    notificationMessage.value = result.candidates[0].content.parts[0].text;
+                } catch(error) {
+                    console.error("Gemini API error:", error);
+                    notificationMessage.value = 'Could not draft notification at this time.';
+                } finally {
+                    aiDraftBtn.disabled = false;
+                }
+            }
+
+            function showToast(message, isError = false) {
+                const toast = document.createElement('div');
+                const toastId = `toast-${Date.now()}`;
+                toast.id = toastId;
+                toast.className = `toast ${isError ? 'toast-error' : 'toast-success'}`;
+
+                const icon = isError ? 
+                    `<svg class="h-6 w-6 mr-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>` :
+                    `<svg class="h-6 w-6 mr-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>`;
+
+                toast.innerHTML = `
+                    ${icon}
+                    <span class="flex-grow">${message}</span>
+                    <button class="ml-4 text-white hover:text-gray-200" onclick="document.getElementById('${toastId}').remove()">
+                        <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                    </button>
+                `;
+
+                toastContainer.appendChild(toast);
+
+                setTimeout(() => toast.classList.add('show'), 100);
+
+                setTimeout(() => {
+                    toast.classList.remove('show');
+                    toast.classList.add('hide');
+                    toast.addEventListener('transitionend', () => toast.remove());
+                }, 3000);
+            }
+            
+            async function handleNewMessage(payload) {
+                const newMessage = payload.new;
+                if (loggedInUser && newMessage.receiver_id === loggedInUser.id) {
+                    if (!chatPanelContainer.classList.contains('hidden') && activeChatPartner && activeChatPartner.id === newMessage.sender_id) {
+                        appendMessageToWindow(newMessage);
+                        markConversationAsRead(newMessage.sender_id);
+                    } else {
+                        const unreadBadge = loggedInUser.role === 'hr' ? unreadCountHr : unreadCountEmployee;
+                        const currentCount = parseInt(unreadBadge.textContent) || 0;
+                        updateUnreadBadge(currentCount + 1);
+                        const userListItem = document.querySelector(`.chat-user[data-userid="${newMessage.sender_id}"] .unread-bubble`);
+                        if (userListItem) {
+                            userListItem.classList.remove('hidden');
+                            userListItem.textContent = (parseInt(userListItem.textContent) || 0) + 1;
+                        }
+                    }
+                }
+            }
+
+            function updateUnreadBadge(count) {
+                const unreadBadge = loggedInUser.role === 'hr' ? unreadCountHr : unreadCountEmployee;
+                if (count > 0) {
+                    unreadBadge.textContent = count;
+                    unreadBadge.classList.remove('hidden');
+                } else {
+                    unreadBadge.classList.add('hidden');
+                }
+            }
+
+            async function openChatPanel() {
+                try {
+                    chatPanelContainer.classList.remove('hidden');
+                    chatPanel.classList.remove('translate-x-full');
+                    chatWindow.innerHTML = `<div class="h-full flex items-center justify-center text-gray-500"><p>Select a conversation to start chatting.</p></div>`;
+                    chatInput.disabled = true;
+                    chatForm.querySelector('button').disabled = true;
+                    await loadChatUserList();
+                } catch (error) {
+                    console.error("Error opening chat panel:", error);
+                    chatUserList.innerHTML = `<div class="p-4 text-center text-red-400">Could not load contacts.</div>`;
+                }
+            }
+
+            function closeChatPanel() {
+                chatPanel.classList.add('translate-x-full');
+                setTimeout(() => {
+                    chatPanelContainer.classList.add('hidden');
+                    activeChatPartner = null;
+                }, 300);
+            }
+
+            async function loadChatUserList() {
+                chatUserList.innerHTML = `<div class="p-4 text-center text-gray-400">Loading contacts...</div>`;
+                let chatContacts = [];
+
+                if (loggedInUser.role === 'hr') {
+                    const { data, error } = await supabase.from('employees').select('*').neq('id', loggedInUser.id);
+                    if (error) throw error;
+                    chatContacts = data || [];
+                } else {
+                    const { data, error } = await supabase.from('employees').select('*').eq('role', 'hr');
+                    if (error) throw error;
+                    chatContacts = data || [];
+                }
+                
+                const { data: unreadMessages, error: msgError } = await supabase
+                    .from('messages').select('sender_id').eq('receiver_id', loggedInUser.id).eq('is_read', false);
+                if(msgError) throw msgError;
+
+                const unreadCounts = {};
+                if (unreadMessages) {
+                    unreadMessages.forEach(message => {
+                        unreadCounts[message.sender_id] = (unreadCounts[message.sender_id] || 0) + 1;
+                    });
+                }
+                
+                chatUserList.innerHTML = '';
+                chatContacts.forEach(contact => {
+                    const unreadCount = unreadCounts[contact.id] || 0;
+                    const userDiv = document.createElement('div');
+                    userDiv.className = 'chat-user flex items-center p-3 hover:bg-gray-800 cursor-pointer border-b border-gray-800 transition-colors duration-200';
+                    userDiv.dataset.userid = contact.id;
+                    userDiv.innerHTML = `
+                        <div class="flex-grow">
+                            <p class="font-semibold">${contact.name}</p>
+                            <p class="text-xs text-gray-400">${contact.role === 'hr' ? 'HR Admin' : contact.designation}</p>
+                        </div>
+                        <span class="unread-bubble ${unreadCount > 0 ? '' : 'hidden'} bg-emerald-500 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">${unreadCount}</span>
+                    `;
+                    userDiv.addEventListener('click', () => loadConversation(contact));
+                    chatUserList.appendChild(userDiv);
+                });
+            }
+
+            async function loadConversation(partner) {
+                try {
+                    activeChatPartner = partner;
+                    chatWindow.innerHTML = `<div class="p-4 text-center text-gray-400">Loading messages...</div>`;
+                    chatInput.disabled = false;
+                    chatInput.placeholder = `Message ${partner.name}`;
+                    chatForm.querySelector('button').disabled = false;
+
+                    document.querySelectorAll('.chat-user').forEach(el => el.classList.remove('bg-gray-700'));
+                    document.querySelector(`.chat-user[data-userid="${partner.id}"]`).classList.add('bg-gray-700');
+                    
+                    const { data: allMessages, error } = await supabase
+                        .from('messages')
+                        .select('*')
+                        .or(`and(sender_id.eq.${loggedInUser.id},receiver_id.eq.${partner.id}),and(sender_id.eq.${partner.id},receiver_id.eq.${loggedInUser.id})`)
+                        .order('created_at', { ascending: true });
+
+                    if (error) throw error;
+                    
+                    chatWindow.innerHTML = '';
+                    if (allMessages && allMessages.length > 0) {
+                        allMessages.forEach(msg => appendMessageToWindow(msg));
+                    } else {
+                         chatWindow.innerHTML = `<div class="h-full flex items-center justify-center text-gray-500"><p>No messages yet. Start the conversation!</p></div>`;
+                    }
+                    await markConversationAsRead(partner.id);
+                } catch (error) {
+                    console.error("Error loading conversation:", error);
+                    chatWindow.innerHTML = `<div class="p-4 text-center text-red-400">Could not load messages.</div>`;
+                }
+            }
+            
+            function appendMessageToWindow(message) {
+                const placeholder = chatWindow.querySelector('div > p');
+                if (placeholder && placeholder.parentElement.classList.contains('flex')) {
+                    chatWindow.innerHTML = '';
+                }
+                const isSender = message.sender_id === loggedInUser.id;
+                const messageDiv = document.createElement('div');
+                messageDiv.className = `flex w-full mb-2 ${isSender ? 'justify-end' : 'justify-start'}`;
+                
+                messageDiv.innerHTML = `
+                    <div class="max-w-xs md:max-w-md p-3 rounded-2xl ${isSender ? 'bg-emerald-600 text-white rounded-br-md' : 'bg-gray-700 text-gray-200 rounded-bl-md'}">
+                        <p class="text-white break-words">${message.content}</p>
+                    </div>
+                `;
+                chatWindow.appendChild(messageDiv);
+                chatWindow.scrollTop = chatWindow.scrollHeight;
+            }
+
+            async function handleSendMessage(e) {
+                e.preventDefault();
+                try {
+                    if (!activeChatPartner) return;
+                    const content = chatInput.value.trim();
+                    if (content === '') return;
+                    const tempMessage = chatInput.value;
+                    chatInput.value = '';
+                    const message = { 
+                        sender_id: loggedInUser.id, 
+                        receiver_id: activeChatPartner.id, 
+                        content: content, 
+                        is_read: false,
+                        created_at: new Date().toISOString()
+                    };
+                    appendMessageToWindow(message);
+                    const { error } = await supabase.from('messages').insert(message);
+                    if (error) {
+                       chatInput.value = tempMessage;
+                       throw error;
+                    }
+                } catch(error) {
+                    console.error('Error sending message:', error);
+                    showToast("Failed to send message.", true);
+                }
+            }
+
+            async function markConversationAsRead(partnerId) {
+                try {
+                    const { data: unreadMessages, error: fetchError } = await supabase
+                        .from('messages').select('id').eq('receiver_id', loggedInUser.id).eq('sender_id', partnerId).eq('is_read', false);
+                    if (fetchError || !unreadMessages || unreadMessages.length === 0) return;
+                    
+                    const idsToUpdate = unreadMessages.map(m => m.id);
+                    const { error: updateError } = await supabase
+                        .from('messages').update({ is_read: true }).in('id', idsToUpdate);
+                    if (updateError) throw updateError;
+                    
+                    const userListItem = document.querySelector(`.chat-user[data-userid="${partnerId}"] .unread-bubble`);
+                    if (userListItem) {
+                        userListItem.classList.add('hidden');
+                        userListItem.textContent = '0';
+                    }
+                    
+                    const mainBadge = loggedInUser.role === 'hr' ? unreadCountHr : unreadCountEmployee;
+                    const currentCount = parseInt(mainBadge.textContent) || 0;
+                    const newCount = Math.max(0, currentCount - unreadMessages.length);
+                    updateUnreadBadge(newCount);
+                } catch(error) {
+                    console.error("Error marking conversation as read:", error);
+                }
             }
         });
     </script>
